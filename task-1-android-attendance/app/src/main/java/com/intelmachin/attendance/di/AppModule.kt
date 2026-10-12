@@ -9,6 +9,7 @@ import com.google.android.gms.location.LocationServices
 import com.intelmachin.attendance.data.location.FusedLocationRepository
 import com.intelmachin.attendance.data.store.DataStoreCheckInRepository
 import com.intelmachin.attendance.data.store.DataStoreOfficeRepository
+import com.intelmachin.attendance.domain.AttendancePolicy
 import com.intelmachin.attendance.domain.repository.CheckInRepository
 import com.intelmachin.attendance.domain.repository.LocationRepository
 import com.intelmachin.attendance.domain.repository.OfficeRepository
@@ -46,6 +47,14 @@ abstract class StorageModule {
         @Provides @Singleton
         fun dataStore(@ApplicationContext context: Context): DataStore<Preferences> = context.attendanceDataStore
     }
+}
+
+/** Switchable business rules; defaults come from [com.intelmachin.attendance.domain.AttendanceRules]. */
+@Module
+@InstallIn(SingletonComponent::class)
+object PolicyModule {
+    @Provides
+    fun policy(): AttendancePolicy = AttendancePolicy()
 }
 
 /** System clock. Swapped for a fixed clock in instrumented tests. */
