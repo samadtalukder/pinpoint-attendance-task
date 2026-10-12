@@ -20,7 +20,10 @@ sealed interface Eligibility {
     data class AlreadyCheckedIn(val checkIn: CheckIn) : Eligibility
 }
 
-data class AttendanceCheck(val distanceMeters: Double?, val eligibility: Eligibility)
+data class AttendanceCheck(val distanceMeters: Double?, val eligibility: Eligibility) {
+    /** Null while distance is unknown (no office or no fix). */
+    val isInRange: Boolean? get() = distanceMeters?.let { it <= AttendanceRules.OFFICE_RADIUS_METERS }
+}
 
 /** Decides whether attendance may be marked right now. First failing rule wins. */
 class EvaluateAttendanceUseCase @Inject constructor(
