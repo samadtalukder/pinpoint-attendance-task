@@ -1,11 +1,11 @@
-# OnSite
+# Pinpoint
 
-**OnSite** is a field-ops toolkit: one repo, two apps for people who work away from the desk.
+**Pinpoint** is a field-ops toolkit: one repo, two apps for people who work away from the desk.
 
 | App | What it does |
 |---|---|
-| [task-1-android-attendance](task-1-android-attendance) | **OnSite Attendance**: a geo-fenced attendance screen. Save the office location once, then check in only when you are within 50 m of it. Native Android, Kotlin, Jetpack Compose. |
-| [task-2-flutter-camera-sync](task-2-flutter-camera-sync) | **OnSite Capture**: custom camera with zoom and tap-to-focus, plus an offline-first upload queue that retries by itself. Flutter. _In progress._ |
+| [task-1-android-attendance](task-1-android-attendance) | **Pinpoint Attendance**: a geo-fenced attendance screen. Save the office location once, then check in only when you are within 50 m of it. Native Android, Kotlin, Jetpack Compose. |
+| [task-2-flutter-camera-sync](task-2-flutter-camera-sync) | **Pinpoint Capture**: custom camera with zoom and tap-to-focus, plus an offline-first upload queue that retries by itself. Flutter. _In progress._ |
 
 ## Project Structure / Approaches
 
@@ -119,6 +119,6 @@ _In progress._ Test on a physical device for camera zoom and background sync.
 | ![Permission denied](screenshots/05-permission-denied.png) | ![GPS off](screenshots/06-gps-off.png) |
 
 ## Release APK
-- **Task 1:** [onsite-attendance-v1.0.apk](task-1-android-attendance/assets/onsite-attendance-v1.0.apk)
+- **Task 1:** [pinpoint-attendance-v1.0.apk](task-1-android-attendance/assets/pinpoint-attendance-v1.0.apk)
   (use the **Download raw file** button on GitHub).
 - **Task 2:** _pending._
