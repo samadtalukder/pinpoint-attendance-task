@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AttendanceTheme {
-                AttendanceScreen(onBack = ::finish)
+                AttendanceScreen()
             }
         }
     }

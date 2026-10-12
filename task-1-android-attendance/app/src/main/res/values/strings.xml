@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">Attendance</string>
     <string name="attendance_title">Attendance</string>
-    <string name="back">Back</string>
 
     <!-- Office context card -->
     <string name="step_office_context">STEP 1: OFFICE CONTEXT</string>
