@@ -91,6 +91,14 @@ class AttendanceContentTest {
     }
 
     @Test
+    fun `stale fix shows warning and locked reason`() {
+        show(unlocked.copy(isFixStale = true, eligibility = Eligibility.StaleFix))
+        compose.onNodeWithText("GPS signal lost. Distance may be out of date.").assertIsDisplayed()
+        compose.onNodeWithText("GPS signal lost. Waiting for a fresh location.").assertIsDisplayed()
+        compose.onNodeWithText("Mark Attendance").assertIsNotEnabled()
+    }
+
+    @Test
     fun `permission denied shows banner with grant action and disables set office`() {
         show(AttendanceUiState(availability = LocationAvailability.PermissionDenied))
         compose.onNodeWithText("Location permission needed").assertIsDisplayed()

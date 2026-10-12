@@ -56,11 +56,32 @@ class EvaluateAttendanceUseCaseTest {
 
     @Test
     fun `window boundaries are inclusive`() {
-        val f = fix(OFFICE)
-        assertEquals(Eligibility.OutsideWindow, evaluate("08:59")(f, OFFICE, null).eligibility)
-        assertEquals(Eligibility.Eligible, evaluate("09:00")(f, OFFICE, null).eligibility)
-        assertEquals(Eligibility.Eligible, evaluate("10:30")(f, OFFICE, null).eligibility)
-        assertEquals(Eligibility.OutsideWindow, evaluate("10:31")(f, OFFICE, null).eligibility)
+        for ((time, expected) in listOf(
+            "08:59" to Eligibility.OutsideWindow,
+            "09:00" to Eligibility.Eligible,
+            "10:30" to Eligibility.Eligible,
+            "10:31" to Eligibility.OutsideWindow,
+        )) {
+            assertEquals(time, expected, evaluate(time)(fix(OFFICE, at = time), OFFICE, null).eligibility)
+        }
+    }
+
+    @Test
+    fun `fix older than 15 s is stale and locks even when in range`() {
+        // Clock 09:30:00, fix 09:29:40 -> 20 s old.
+        val old = fix(OFFICE).copy(timeMillis = Instant.parse("2026-10-12T09:29:40Z").toEpochMilli())
+        val check = evaluate()(old, OFFICE, null)
+        assertEquals(Eligibility.StaleFix, check.eligibility)
+        assertTrue(check.isStale)
+        assertNotNull(check.distanceMeters)
+    }
+
+    @Test
+    fun `fix exactly 15 s old still counts as live`() {
+        val edge = fix(OFFICE).copy(timeMillis = Instant.parse("2026-10-12T09:29:45Z").toEpochMilli())
+        val check = evaluate()(edge, OFFICE, null)
+        assertEquals(Eligibility.Eligible, check.eligibility)
+        assertEquals(false, check.isStale)
     }
 
     @Test

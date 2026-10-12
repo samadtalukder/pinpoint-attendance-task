@@ -29,6 +29,7 @@
     <string name="range_helper_out">Move within %1$d meters of the designated office location to enable check-in.</string>
     <string name="range_helper_unknown">Set the office location and wait for a GPS fix.</string>
     <string name="accuracy_text">GPS accuracy ±%1$dm</string>
+    <string name="stale_fix_warning">GPS signal lost. Distance may be out of date.</string>
 
     <!-- Mark attendance card -->
     <string name="mark_attendance">Mark Attendance</string>
@@ -39,6 +40,7 @@
     <string name="checked_in_at">Checked in at %1$s</string>
     <string name="reason_no_office">Set the office location first.</string>
     <string name="reason_no_fix">Waiting for a GPS fix.</string>
+    <string name="reason_stale_fix">GPS signal lost. Waiting for a fresh location.</string>
     <string name="reason_mock_location">Mock location detected. Turn off mock locations to continue.</string>
     <string name="reason_low_accuracy">GPS accuracy too low (±%1$dm). Move to open sky.</string>
     <string name="reason_out_of_range">Move within %1$d meters of the office.</string>

@@ -18,7 +18,9 @@ val OFFICE = GeoPoint(23.7806, 90.4193)
 /** Point roughly [meters] due north of [from] (1 deg latitude is about 111,195 m). */
 fun northOf(from: GeoPoint, meters: Double) = GeoPoint(from.latitude + meters / 111_195.0, from.longitude)
 
-fun fix(point: GeoPoint, accuracy: Float = 5f, mock: Boolean = false) = LocationFix(point, accuracy, mock)
+/** Fix taken at the given UTC time on 2026-10-12; default matches the default test clock. */
+fun fix(point: GeoPoint, accuracy: Float = 5f, mock: Boolean = false, at: String = "09:30") =
+    LocationFix(point, accuracy, mock, Instant.parse("2026-10-12T${at}:00Z").toEpochMilli())
 
 /** UTC clock fixed at the given UTC time on 2026-10-12. */
 fun clockAt(time: String): Clock = Clock.fixed(Instant.parse("2026-10-12T${time}:00Z"), ZoneOffset.UTC)
