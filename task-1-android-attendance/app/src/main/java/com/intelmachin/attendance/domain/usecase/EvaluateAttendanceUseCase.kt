@@ -1,5 +1,6 @@
 package com.intelmachin.attendance.domain.usecase
 
+import com.intelmachin.attendance.domain.AttendancePolicy
 import com.intelmachin.attendance.domain.AttendanceRules
 import com.intelmachin.attendance.domain.model.CheckIn
 import com.intelmachin.attendance.domain.model.GeoPoint
@@ -37,6 +38,7 @@ data class AttendanceCheck(
 class EvaluateAttendanceUseCase @Inject constructor(
     private val distance: CalculateDistanceUseCase,
     private val clock: Clock,
+    private val policy: AttendancePolicy,
 ) {
     operator fun invoke(fix: LocationFix?, office: GeoPoint?, lastCheckIn: CheckIn?): AttendanceCheck {
         val meters = if (fix != null && office != null) distance(fix.point, office) else null
@@ -57,7 +59,7 @@ class EvaluateAttendanceUseCase @Inject constructor(
         office == null -> Eligibility.NoOffice
         fix == null || meters == null -> Eligibility.NoFix
         stale -> Eligibility.StaleFix
-        fix.isMock -> Eligibility.MockLocation
+        fix.isMock && policy.blockMockLocations -> Eligibility.MockLocation
         fix.accuracyMeters > AttendanceRules.MAX_ACCURACY_METERS -> Eligibility.LowAccuracy(fix.accuracyMeters)
         meters > AttendanceRules.OFFICE_RADIUS_METERS -> Eligibility.OutOfRange
         !windowOpen -> Eligibility.OutsideWindow

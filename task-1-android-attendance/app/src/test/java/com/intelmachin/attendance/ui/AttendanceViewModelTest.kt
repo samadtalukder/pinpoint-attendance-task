@@ -1,6 +1,7 @@
 package com.intelmachin.attendance.ui
 
 import com.intelmachin.attendance.domain.model.LocationStatus
+import com.intelmachin.attendance.domain.AttendancePolicy
 import com.intelmachin.attendance.domain.usecase.CalculateDistanceUseCase
 import com.intelmachin.attendance.domain.usecase.Eligibility
 import com.intelmachin.attendance.domain.usecase.EvaluateAttendanceUseCase
@@ -46,10 +47,11 @@ class AttendanceViewModelTest {
 
     private fun viewModel(time: String = "09:30"): AttendanceViewModel {
         val clock = clockAt(time)
-        val evaluate = EvaluateAttendanceUseCase(CalculateDistanceUseCase(), clock)
+        val policy = AttendancePolicy(blockMockLocations = true)
+        val evaluate = EvaluateAttendanceUseCase(CalculateDistanceUseCase(), clock, policy)
         return AttendanceViewModel(
             location, office, checkIns, evaluate,
-            SetOfficeLocationUseCase(location, office),
+            SetOfficeLocationUseCase(location, office, policy),
             MarkAttendanceUseCase(location, office, checkIns, evaluate, clock),
         )
     }

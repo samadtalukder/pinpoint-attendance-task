@@ -1,5 +1,6 @@
 package com.intelmachin.attendance.domain
 
+import com.intelmachin.attendance.domain.AttendancePolicy
 import com.intelmachin.attendance.domain.model.CheckIn
 import com.intelmachin.attendance.domain.usecase.CalculateDistanceUseCase
 import com.intelmachin.attendance.domain.usecase.Eligibility
@@ -16,7 +17,8 @@ import org.junit.Test
 import java.time.Instant
 
 class EvaluateAttendanceUseCaseTest {
-    private fun evaluate(time: String = "09:30") = EvaluateAttendanceUseCase(CalculateDistanceUseCase(), clockAt(time))
+    private fun evaluate(time: String = "09:30", policy: AttendancePolicy = AttendancePolicy()) =
+        EvaluateAttendanceUseCase(CalculateDistanceUseCase(), clockAt(time), policy)
 
     @Test
     fun `eligible when in range, accurate and inside window`() {
@@ -49,8 +51,14 @@ class EvaluateAttendanceUseCaseTest {
     }
 
     @Test
-    fun `mock fix is rejected even when in range`() {
+    fun `mock fix is accepted by default so fake-GPS testing works`() {
         val check = evaluate()(fix(OFFICE, mock = true), OFFICE, null)
+        assertEquals(Eligibility.Eligible, check.eligibility)
+    }
+
+    @Test
+    fun `mock fix is rejected when blocking is on, even in range`() {
+        val check = evaluate(policy = AttendancePolicy(blockMockLocations = true))(fix(OFFICE, mock = true), OFFICE, null)
         assertEquals(Eligibility.MockLocation, check.eligibility)
     }
 

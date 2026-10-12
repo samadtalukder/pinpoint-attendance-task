@@ -1,6 +1,7 @@
 package com.intelmachin.attendance.domain
 
 import com.intelmachin.attendance.domain.model.CheckIn
+import com.intelmachin.attendance.domain.AttendancePolicy
 import com.intelmachin.attendance.domain.usecase.CalculateDistanceUseCase
 import com.intelmachin.attendance.domain.usecase.Eligibility
 import com.intelmachin.attendance.domain.usecase.EvaluateAttendanceUseCase
@@ -24,13 +25,19 @@ import org.junit.Test
 class SetOfficeLocationUseCaseTest {
     private val location = FakeLocationRepository()
     private val office = FakeOfficeRepository()
-    private val setOffice = SetOfficeLocationUseCase(location, office)
+    private val setOffice = SetOfficeLocationUseCase(location, office, AttendancePolicy(blockMockLocations = true))
 
     @Test
     fun `saves good fix`() = runTest {
         location.fixResult = fix(OFFICE, accuracy = 8f)
         assertEquals(SetOfficeResult.Saved(OFFICE), setOffice())
         assertEquals(OFFICE, office.office.first())
+    }
+
+    @Test
+    fun `mock fix is saved when blocking is off`() = runTest {
+        location.fixResult = fix(OFFICE, mock = true)
+        assertEquals(SetOfficeResult.Saved(OFFICE), SetOfficeLocationUseCase(location, office, AttendancePolicy())())
     }
 
     @Test
@@ -61,7 +68,7 @@ class MarkAttendanceUseCaseTest {
     private val checkIns = FakeCheckInRepository()
     private val clock = clockAt("09:15")
     private val mark = MarkAttendanceUseCase(
-        location, office, checkIns, EvaluateAttendanceUseCase(CalculateDistanceUseCase(), clock), clock,
+        location, office, checkIns, EvaluateAttendanceUseCase(CalculateDistanceUseCase(), clock, AttendancePolicy()), clock,
     )
 
     @Test
