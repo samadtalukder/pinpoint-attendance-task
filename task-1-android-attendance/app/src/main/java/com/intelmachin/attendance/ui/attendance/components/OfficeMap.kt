@@ -1,9 +1,12 @@
 package com.intelmachin.attendance.ui.attendance.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
@@ -17,7 +20,7 @@ import org.osmdroid.views.MapView
 
 private const val MAP_ZOOM = 17.0
 
-/** osmdroid map centred on the saved office. Background only: no marker or zoom buttons; the Lat/Lon pill marks the spot. */
+/** osmdroid map centred on the saved office. Static background: no marker, zoom buttons or gestures; the Lat/Lon pill marks the spot. */
 @Composable
 fun OfficeMap(office: GeoPoint, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -45,11 +48,17 @@ fun OfficeMap(office: GeoPoint, modifier: Modifier = Modifier) {
             mapView.onDetach()
         }
     }
-    AndroidView(
-        modifier = modifier,
-        factory = { mapView },
-        update = { map ->
-            map.controller.setCenter(OsmGeoPoint(office.latitude, office.longitude))
-        },
-    )
+    Box(modifier) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { mapView },
+            update = { map ->
+                map.controller.setCenter(OsmGeoPoint(office.latitude, office.longitude))
+            },
+        )
+        // osmdroid zooms on double tap and drags on its own gesture detector, which
+        // setMultiTouchControls(false) does not turn off. This overlay takes the touches first
+        // and consumes nothing, so the page still scrolls and the map stays fixed.
+        Box(Modifier.fillMaxSize().pointerInput(Unit) {})
+    }
 }

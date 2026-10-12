@@ -22,11 +22,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.intelmachin.attendance.R
 import com.intelmachin.attendance.domain.AttendanceRules
 import com.intelmachin.attendance.ui.attendance.formatDistance
+import com.intelmachin.attendance.ui.theme.LockedColors
 import com.intelmachin.attendance.ui.theme.StatusColors
 import kotlin.math.roundToInt
+
+private val HelperTextSize = 12.sp
+private val HelperLineHeight = 18.sp
 
 /** Status chip plus helper copy and the live distance sentence. State = icon + text + colour. */
 @Composable
@@ -76,8 +81,12 @@ fun RangeStatusSection(
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = HelperTextSize,
+                lineHeight = HelperLineHeight,
+                fontWeight = FontWeight.Medium,
+                color = LockedColors.helper,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 12.dp),
             )
         }
         if (isFixStale) {
