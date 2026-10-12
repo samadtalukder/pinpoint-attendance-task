@@ -1,0 +1,33 @@
+# Prompt log (curated version is PROMPTS.md)
+PROMPTS.raw.md
+
+# Signing and secrets
+*.jks
+*.keystore
+key.properties
+local.properties
+.env
+.claude/settings.local.json
+
+# Android
+.gradle/
+build/
+captures/
+.cxx/
+*.iml
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Assessment brief (local reference only)
+assessment-brief.pdf
