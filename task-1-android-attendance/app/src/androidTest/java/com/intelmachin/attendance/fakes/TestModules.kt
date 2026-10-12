@@ -18,13 +18,15 @@ import dagger.hilt.testing.TestInstallIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
+import java.time.LocalDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** 09:30 UTC on 2026-10-12: inside the 09:00-10:30 attendance window. */
-val TEST_CLOCK: Clock = Clock.fixed(Instant.parse("2026-10-12T09:30:00Z"), ZoneOffset.UTC)
+/** 09:30 device-local time on 2026-10-12: inside the 09:00-10:30 window in any time zone. */
+val TEST_CLOCK: Clock = ZoneId.systemDefault().let { zone ->
+    Clock.fixed(LocalDateTime.of(2026, 10, 12, 9, 30).atZone(zone).toInstant(), zone)
+}
 
 /** Fake GPS: the test moves the user by calling [moveTo]. */
 @Singleton
