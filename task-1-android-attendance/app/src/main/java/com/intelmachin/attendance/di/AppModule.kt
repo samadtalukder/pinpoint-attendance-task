@@ -23,24 +23,35 @@ import javax.inject.Singleton
 
 private val Context.attendanceDataStore: DataStore<Preferences> by preferencesDataStore(name = "attendance")
 
+/** Real GPS. Swapped for a fake in instrumented tests. */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+abstract class LocationModule {
     @Binds abstract fun location(impl: FusedLocationRepository): LocationRepository
-    @Binds abstract fun office(impl: DataStoreOfficeRepository): OfficeRepository
-    @Binds abstract fun checkIn(impl: DataStoreCheckInRepository): CheckInRepository
+
+    companion object {
+        @Provides @Singleton
+        fun fusedClient(@ApplicationContext context: Context): FusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(context)
+    }
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
-object PlatformModule {
-    @Provides @Singleton
-    fun dataStore(@ApplicationContext context: Context): DataStore<Preferences> = context.attendanceDataStore
+abstract class StorageModule {
+    @Binds abstract fun office(impl: DataStoreOfficeRepository): OfficeRepository
+    @Binds abstract fun checkIn(impl: DataStoreCheckInRepository): CheckInRepository
 
-    @Provides @Singleton
-    fun fusedClient(@ApplicationContext context: Context): FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
+    companion object {
+        @Provides @Singleton
+        fun dataStore(@ApplicationContext context: Context): DataStore<Preferences> = context.attendanceDataStore
+    }
+}
 
+/** System clock. Swapped for a fixed clock in instrumented tests. */
+@Module
+@InstallIn(SingletonComponent::class)
+object ClockModule {
     @Provides
     fun clock(): Clock = Clock.systemDefaultZone()
 }
