@@ -17,6 +17,8 @@
     <string name="distance_kilometers">%1$.1fkm</string>
     <string name="distance_unknown">--</string>
     <string name="distance_away_label">AWAY</string>
+    <string name="distance_away_text">You are %1$s away from the office</string>
+    <string name="distance_unavailable_text">Distance appears once the office and your location are known</string>
     <string name="ring_description">%1$s. %2$s</string>
     <string name="chip_in_range">IN RANGE</string>
     <string name="chip_out_of_range">OUT OF RANGE</string>
