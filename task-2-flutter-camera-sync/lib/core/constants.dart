@@ -31,3 +31,18 @@ abstract final class SyncConstants {
   /// the worker.
   static const String queueChangePortName = 'pinpoint.queue_changes';
 }
+
+/// Zoom presets shown as rounded buttons.
+abstract final class ZoomConstants {
+  static const double ultraWide = 0.5;
+  static const double main = 1.0;
+  static const double telephoto = 2.0;
+
+  /// A preset counts as active when the zoom is this close to it.
+  static const double activeTolerance = 0.05;
+}
+
+abstract final class StorageConstants {
+  /// Folder under the app documents directory for queued images.
+  static const String capturesDirectory = 'captures';
+}
