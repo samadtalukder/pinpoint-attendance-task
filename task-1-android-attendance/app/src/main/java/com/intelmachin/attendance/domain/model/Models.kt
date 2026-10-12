@@ -13,7 +13,6 @@ data class CheckIn(val epochMillis: Long)
 
 sealed interface LocationStatus {
     data object PermissionDenied : LocationStatus
-    data object PermanentlyDenied : LocationStatus
     data object GpsOff : LocationStatus
     data object Searching : LocationStatus
     data class Available(val fix: LocationFix) : LocationStatus
