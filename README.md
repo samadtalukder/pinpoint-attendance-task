@@ -7,7 +7,7 @@
 | [task-1-android-attendance](task-1-android-attendance) | **Pinpoint Attendance**: a geo-fenced attendance screen. Save the office location once, then check in only when you are within 50 m of it. Native Android, Kotlin, Jetpack Compose. |
 | [task-2-flutter-camera-sync](task-2-flutter-camera-sync) | **Pinpoint Capture**: custom camera with zoom and tap-to-focus, plus an offline-first upload queue that retries by itself. Flutter. _In progress._ |
 
-## Project Structure / Approaches
+## Project Structure
 
 ### Task 1: Attendance (Android)
 Layered **MVVM**: `ui` -> `domain` -> `data`, dependencies point inward, wired with Hilt constructor injection.
@@ -108,7 +108,7 @@ flutter run
 ```
 _In progress._ Test on a physical device for camera zoom and background sync.
 
-## Screenshots (Task 1)[PROMPTS.raw.md](PROMPTS.raw.md)
+## Screenshots (Task 1)
 
 | Setup | Out of range | In range | Checked in |
 |---|---|---|---|
