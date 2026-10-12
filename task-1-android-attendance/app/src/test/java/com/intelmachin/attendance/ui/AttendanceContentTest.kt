@@ -156,5 +156,7 @@ class AttendanceContentTest {
         show(unlocked.copy(eligibility = Eligibility.AlreadyCheckedIn(CheckIn(1_760_000_000_000)), checkIn = CheckIn(1_760_000_000_000)))
         compose.onNodeWithText("Mark Attendance").assertIsNotEnabled()
         compose.onNodeWithContentDescription("Locked. Checked in at", substring = true).assertExists()
+        compose.onNodeWithText("CHECKED IN AT", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("AVAILABLE", substring = true).assertDoesNotExist()
     }
 }

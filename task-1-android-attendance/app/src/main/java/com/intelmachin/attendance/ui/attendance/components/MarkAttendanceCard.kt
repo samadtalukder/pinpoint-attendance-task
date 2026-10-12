@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.intelmachin.attendance.R
 import com.intelmachin.attendance.domain.AttendanceRules
 import com.intelmachin.attendance.domain.usecase.Eligibility
+import com.intelmachin.attendance.ui.attendance.formatCheckInTime
 import com.intelmachin.attendance.ui.attendance.formatClock
 import com.intelmachin.attendance.ui.attendance.reasonText
 import com.intelmachin.attendance.ui.theme.LockedColors
@@ -99,12 +100,17 @@ fun MarkAttendanceCard(
                     modifier = Modifier.padding(start = if (isMarking) 8.dp else 0.dp),
                 )
             }
+            // One line, as in the mockup: the window, or the check-in time once attendance is marked.
             Text(
-                text = stringResource(
-                    R.string.available_window,
-                    formatClock(AttendanceRules.WINDOW_START),
-                    formatClock(AttendanceRules.WINDOW_END),
-                ).uppercase(),
+                text = if (eligibility is Eligibility.AlreadyCheckedIn) {
+                    stringResource(R.string.checked_in_at, formatCheckInTime(eligibility.checkIn.epochMillis))
+                } else {
+                    stringResource(
+                        R.string.available_window,
+                        formatClock(AttendanceRules.WINDOW_START),
+                        formatClock(AttendanceRules.WINDOW_END),
+                    )
+                }.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.5.sp,
