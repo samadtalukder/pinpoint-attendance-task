@@ -28,7 +28,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.intelmachin.attendance.R
 import com.intelmachin.attendance.domain.AttendanceRules
@@ -48,6 +47,7 @@ fun MarkAttendanceCard(
     modifier: Modifier = Modifier,
 ) {
     val unlocked = eligibility == Eligibility.Eligible
+    // Card shows only the window, as in the mockup; the lock reason is read out by screen readers.
     val reason = eligibility.reasonText()
     val borderColor = MaterialTheme.colorScheme.outlineVariant
     val description = if (unlocked) stringResource(R.string.mark_unlocked_description)
@@ -86,12 +86,6 @@ fun MarkAttendanceCard(
                     modifier = Modifier.padding(start = if (isMarking) 8.dp else 0.dp),
                 )
             }
-            Text(
-                text = reason,
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             Text(
                 text = stringResource(
                     R.string.available_window,

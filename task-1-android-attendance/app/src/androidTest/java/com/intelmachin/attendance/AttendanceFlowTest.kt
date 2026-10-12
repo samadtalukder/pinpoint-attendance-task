@@ -3,6 +3,8 @@ package com.intelmachin.attendance
 import android.Manifest
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -56,7 +58,7 @@ class AttendanceFlowTest {
     fun setOffice_moveIntoRange_marksAttendance() {
         // Standing at the office with no office saved yet: check-in is locked.
         gps.moveTo(OFFICE)
-        awaitText("Set the office location first.")
+        await(hasContentDescription("Locked. Set the office location first."))
         compose.onNodeWithText("Mark Attendance").performScrollTo().assertIsNotEnabled()
 
         // Setup phase: save the current GPS position as the office.
@@ -78,13 +80,15 @@ class AttendanceFlowTest {
 
         // Checked in: confirmation shown and the button locks for the rest of the day.
         awaitText("Attendance marked")
-        compose.onNodeWithText("Checked in at", substring = true).performScrollTo()
+        await(hasContentDescription("Locked. Checked in at", substring = true))
         compose.onNodeWithText("Mark Attendance").performScrollTo().assertIsNotEnabled()
     }
 
-    private fun awaitText(text: String) {
+    private fun awaitText(text: String) = await(hasText(text))
+
+    private fun await(matcher: SemanticsMatcher) {
         compose.waitUntil(TIMEOUT_MS) {
-            compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
         }
     }
 }

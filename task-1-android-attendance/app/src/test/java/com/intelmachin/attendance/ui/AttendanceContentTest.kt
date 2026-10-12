@@ -3,6 +3,7 @@ package com.intelmachin.attendance.ui
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.assertIsDisplayed
@@ -65,7 +66,8 @@ class AttendanceContentTest {
         compose.onNodeWithText("Mark Attendance").assertIsNotEnabled()
         compose.onNodeWithText("You are 120m away from the office").assertIsDisplayed()
         compose.onNodeWithText("OUT OF RANGE").assertIsDisplayed()
-        compose.onNodeWithText("Move within 50 meters of the office.").assertIsDisplayed()
+        compose.onNodeWithText("Move within 50 meters of the office.").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Locked. Move within 50 meters of the office.").assertExists()
         compose.onNodeWithText("Lat: 40.7128, Lon: -74.0060").assertIsDisplayed()
         compose.onNodeWithText("AVAILABLE 09:00 AM - 10:30 AM").assertIsDisplayed()
     }
@@ -79,23 +81,23 @@ class AttendanceContentTest {
     }
 
     @Test
-    fun `outside window explains why it is locked even when in range`() {
+    fun `outside window stays locked even when in range`() {
         show(unlocked.copy(eligibility = Eligibility.OutsideWindow))
         compose.onNodeWithText("Mark Attendance").assertIsNotEnabled()
         compose.onNodeWithText("IN RANGE").assertIsDisplayed()
     }
 
     @Test
-    fun `mock location and low accuracy reasons are visible`() {
+    fun `mock location reason is announced to screen readers`() {
         show(unlocked.copy(eligibility = Eligibility.MockLocation))
-        compose.onNodeWithText("Mock location detected. Turn off mock locations to continue.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Locked. Mock location detected. Turn off mock locations to continue.").assertExists()
     }
 
     @Test
     fun `stale fix shows warning and locked reason`() {
         show(unlocked.copy(isFixStale = true, eligibility = Eligibility.StaleFix))
         compose.onNodeWithText("GPS signal lost. Distance may be out of date.").assertIsDisplayed()
-        compose.onNodeWithText("GPS signal lost. Waiting for a fresh location.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Locked. GPS signal lost. Waiting for a fresh location.").assertExists()
         compose.onNodeWithText("Mark Attendance").assertIsNotEnabled()
     }
 
@@ -148,9 +150,9 @@ class AttendanceContentTest {
     }
 
     @Test
-    fun `already checked in is locked with confirmation text`() {
+    fun `already checked in is locked and announces check-in time`() {
         show(unlocked.copy(eligibility = Eligibility.AlreadyCheckedIn(CheckIn(1_760_000_000_000)), checkIn = CheckIn(1_760_000_000_000)))
         compose.onNodeWithText("Mark Attendance").assertIsNotEnabled()
-        compose.onNodeWithText("Checked in at", substring = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Locked. Checked in at", substring = true).assertExists()
     }
 }
