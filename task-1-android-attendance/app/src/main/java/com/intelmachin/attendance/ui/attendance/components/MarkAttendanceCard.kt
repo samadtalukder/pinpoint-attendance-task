@@ -1,5 +1,6 @@
 package com.intelmachin.attendance.ui.attendance.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,18 +31,18 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.intelmachin.attendance.R
 import com.intelmachin.attendance.domain.AttendanceRules
 import com.intelmachin.attendance.domain.usecase.Eligibility
 import com.intelmachin.attendance.ui.attendance.formatClock
 import com.intelmachin.attendance.ui.attendance.reasonText
+import com.intelmachin.attendance.ui.theme.LockedColors
 import com.intelmachin.attendance.ui.theme.StatusColors
 
 private val CardRadius = 20.dp
-private val MinTouchTarget = 48.dp
-
-/** Material 3 opacity for disabled content. */
-private const val DisabledAlpha = 0.38f
+private val ButtonMinHeight = 56.dp
+private val ButtonRadius = 16.dp
 
 @Composable
 fun MarkAttendanceCard(
@@ -53,18 +55,18 @@ fun MarkAttendanceCard(
     val unlocked = eligibility == Eligibility.Eligible
     // Card shows only the window, as in the mockup; the lock reason is read out by screen readers.
     val reason = eligibility.reasonText()
-    val borderColor = MaterialTheme.colorScheme.outlineVariant
     val description = if (unlocked) stringResource(R.string.mark_unlocked_description)
     else stringResource(R.string.mark_locked_description, reason)
     val checkedIn = eligibility is Eligibility.AlreadyCheckedIn
-    // Outside the window the lock and window hint use the disabled colour, like the button.
-    val hintColor = if (isWindowOpen) MaterialTheme.colorScheme.onSurfaceVariant
-    else MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledAlpha)
+    // Outside the window the lock and window hint fade to the slate locked tone, like the button.
+    val hintColor = if (isWindowOpen) MaterialTheme.colorScheme.onSurfaceVariant else LockedColors.hint
+    val borderColor = LockedColors.border
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = description }
+            .background(LockedColors.container, RoundedCornerShape(CardRadius))
             .dashedBorder(borderColor),
     ) {
         Column(
@@ -81,8 +83,12 @@ fun MarkAttendanceCard(
             Button(
                 onClick = onMark,
                 enabled = unlocked && !isMarking,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().heightIn(min = MinTouchTarget),
+                shape = RoundedCornerShape(ButtonRadius),
+                colors = ButtonDefaults.buttonColors(
+                    disabledContainerColor = LockedColors.button,
+                    disabledContentColor = LockedColors.buttonContent,
+                ),
+                modifier = Modifier.fillMaxWidth().heightIn(min = ButtonMinHeight),
             ) {
                 if (isMarking) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
@@ -101,6 +107,7 @@ fun MarkAttendanceCard(
                 ).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp,
                 color = hintColor,
             )
         }

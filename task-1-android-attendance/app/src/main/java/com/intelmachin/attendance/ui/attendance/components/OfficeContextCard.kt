@@ -14,11 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AddLocationAlt
+import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,7 +40,10 @@ import com.intelmachin.attendance.domain.model.GeoPoint
 import java.util.Locale
 
 private val MapHeight = 140.dp
-private val MinTouchTarget = 48.dp
+private val ButtonMinHeight = 56.dp
+private val ButtonRadius = 16.dp
+private const val ButtonStrokeAlpha = 0.65f
+private const val DisabledStrokeAlpha = 0.25f
 
 @Composable
 fun OfficeContextCard(
@@ -75,24 +79,30 @@ fun OfficeContextCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
+            val buttonEnabled = canSetOffice && !isSettingOffice
+            // Mockup: pill-like outlined button, soft blue stroke, bold blue label, circled plus.
             OutlinedButton(
                 onClick = onSetOffice,
-                enabled = canSetOffice && !isSettingOffice,
-                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().heightIn(min = MinTouchTarget),
+                enabled = buttonEnabled,
+                border = BorderStroke(
+                    1.5.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = if (buttonEnabled) ButtonStrokeAlpha else DisabledStrokeAlpha),
+                ),
+                shape = RoundedCornerShape(ButtonRadius),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                modifier = Modifier.fillMaxWidth().heightIn(min = ButtonMinHeight),
             ) {
                 if (isSettingOffice) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Outlined.AddLocationAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.AddCircleOutline, contentDescription = null, modifier = Modifier.size(20.dp))
                 }
                 Text(
                     text = stringResource(
                         if (isSettingOffice) R.string.setting_office_location else R.string.set_office_location,
                     ),
-                    modifier = Modifier.padding(start = 8.dp),
-                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 10.dp),
+                    fontWeight = FontWeight.Bold,
                 )
             }
         }

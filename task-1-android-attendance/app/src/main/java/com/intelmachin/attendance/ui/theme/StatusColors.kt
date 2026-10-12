@@ -11,3 +11,14 @@ object StatusColors {
     val inRangeContainer: Color
         @Composable get() = if (isSystemInDarkTheme()) Color(0xFF123A21) else Color(0xFFDDF4E4)
 }
+
+/** Slate tones for the locked Mark Attendance card, as in the mockup. */
+object LockedColors {
+    private val dark @Composable get() = isSystemInDarkTheme()
+
+    val container: Color @Composable get() = if (dark) Color(0xFF1C2129) else Color(0xFFF1F4F8)
+    val border: Color @Composable get() = if (dark) Color(0xFF3A4352) else Color(0xFFC5CCD8)
+    val hint: Color @Composable get() = if (dark) Color(0xFF7F8A9D) else Color(0xFF8A94A7)
+    val button: Color @Composable get() = if (dark) Color(0xFF2E3644) else Color(0xFFCBD2DE)
+    val buttonContent: Color @Composable get() = if (dark) Color(0xFFAEB7C7) else Color(0xFF59647A)
+}
