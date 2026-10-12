@@ -112,11 +112,11 @@ _In progress._ Test on a physical device for camera zoom and background sync.
 
 | Setup | Out of range | In range | Checked in |
 |---|---|---|---|
-| ![Setup](screenshots/01-setup-no-office.png) | ![Out of range](screenshots/02-out-of-range.png) | ![In range](screenshots/03-in-range-unlocked.png) | ![Checked in](screenshots/04-checked-in.png) |
+| ![Setup](task-1-android-attendance/screenshots/01-setup-no-office.png) | ![Out of range](task-1-android-attendance/screenshots/02-out-of-range.png) | ![In range](task-1-android-attendance/screenshots/03-in-range-unlocked.png) | ![Checked in](task-1-android-attendance/screenshots/04-checked-in.png) |
 
 | Permission denied | GPS off |
 |---|---|
-| ![Permission denied](screenshots/05-permission-denied.png) | ![GPS off](screenshots/06-gps-off.png) |
+| ![Permission denied](task-1-android-attendance/screenshots/05-permission-denied.png) | ![GPS off](task-1-android-attendance/screenshots/06-gps-off.png) |
 
 ## Release APK
 - **Task 1:** [pinpoint-attendance-v1.0.apk](task-1-android-attendance/assets/pinpoint-attendance-v1.0.apk)
