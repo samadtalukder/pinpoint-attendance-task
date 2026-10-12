@@ -23,10 +23,8 @@
     <string name="chip_in_range">IN RANGE</string>
     <string name="chip_out_of_range">OUT OF RANGE</string>
     <string name="chip_unknown">DISTANCE UNKNOWN</string>
-    <string name="range_helper_in">You are within the office radius. Check-in is allowed.</string>
     <string name="range_helper_out">Move within %1$d meters of the designated office location to enable check-in.</string>
     <string name="range_helper_unknown">Set the office location and wait for a GPS fix.</string>
-    <string name="accuracy_text">GPS accuracy ±%1$dm</string>
     <string name="stale_fix_warning">GPS signal lost. Distance may be out of date.</string>
 
     <!-- Mark attendance card -->

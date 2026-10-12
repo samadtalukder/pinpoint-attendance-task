@@ -76,6 +76,8 @@ class AttendanceContentTest {
     fun `in range inside window unlocks and fires callback`() {
         show(unlocked)
         compose.onNodeWithText("IN RANGE").assertIsDisplayed()
+        compose.onNodeWithText("You are within the office radius. Check-in is allowed.").assertDoesNotExist()
+        compose.onNodeWithText("GPS accuracy", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Mark Attendance").assertIsEnabled().performClick()
         assertEquals(1, markClicks)
     }

@@ -33,13 +33,12 @@ import kotlin.math.roundToInt
 fun RangeStatusSection(
     distanceMeters: Double?,
     isInRange: Boolean?,
-    accuracyMeters: Float?,
     isFixStale: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val (label, helper, tint, container, icon) = when (isInRange) {
         true -> ChipStyle(
-            R.string.chip_in_range, stringResource(R.string.range_helper_in),
+            R.string.chip_in_range, null,
             StatusColors.inRange, StatusColors.inRangeContainer, Icons.Filled.CheckCircle,
         )
         false -> ChipStyle(
@@ -73,12 +72,14 @@ fun RangeStatusSection(
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
         )
-        Text(
-            text = helper,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        helper?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
         if (isFixStale) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -93,19 +94,13 @@ fun RangeStatusSection(
                 )
             }
         }
-        accuracyMeters?.let {
-            Text(
-                text = stringResource(R.string.accuracy_text, it.roundToInt()),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 
 private data class ChipStyle(
     val label: Int,
-    val helper: String,
+    /** Null when the sentence above already says everything (in range). */
+    val helper: String?,
     val tint: androidx.compose.ui.graphics.Color,
     val container: androidx.compose.ui.graphics.Color,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,

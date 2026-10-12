@@ -68,7 +68,6 @@ class AttendanceViewModel @Inject constructor(
             office = officePoint,
             distanceMeters = check.distanceMeters,
             isInRange = check.isInRange,
-            accuracyMeters = fix?.accuracyMeters,
             isFixStale = check.isStale,
             eligibility = check.eligibility,
             isWindowOpen = check.isWindowOpen,
