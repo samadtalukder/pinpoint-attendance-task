@@ -108,7 +108,7 @@ flutter run
 ```
 _In progress._ Test on a physical device for camera zoom and background sync.
 
-## Screenshots (Task 1)
+## Screenshots (Task 1)[PROMPTS.raw.md](PROMPTS.raw.md)
 
 | Setup | Out of range | In range | Checked in |
 |---|---|---|---|
