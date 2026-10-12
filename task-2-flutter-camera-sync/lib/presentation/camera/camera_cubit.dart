@@ -156,21 +156,27 @@ class CameraCubit extends Cubit<CameraState> {
 
   void feedbackShown() => emit(state.copyWith(feedback: CameraFeedback.none));
 
-  /// The camera must be released while the app is in the background.
+  /// The camera must be released while the app is in the background. The
+  /// state leaves `ready` first so the preview widget is gone before the
+  /// controller is disposed.
   Future<void> onAppPaused() async {
     if (!state.isReady) return;
     _released = true;
+    emit(state.copyWith(status: CameraStatus.initializing));
     await _camera.dispose();
   }
 
   /// Restarts a released camera, and re-checks after a failure, e.g. the
   /// user granted the permission in system settings.
   Future<void> onAppResumed() async {
-    final retryable = switch (state.status) {
-      CameraStatus.initializing || CameraStatus.noCamera => false,
-      CameraStatus.ready => _released,
-      _ => true,
-    };
+    final retryable =
+        _released ||
+        switch (state.status) {
+          CameraStatus.permissionDenied ||
+          CameraStatus.permissionPermanentlyDenied ||
+          CameraStatus.error => true,
+          _ => false,
+        };
     if (retryable) await initialize();
   }
 
