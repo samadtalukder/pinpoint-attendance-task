@@ -67,6 +67,14 @@ class EvaluateAttendanceUseCaseTest {
     }
 
     @Test
+    fun `window open flag is reported even when another rule fails first`() {
+        val closed = evaluate("16:00")(fix(northOf(OFFICE, 120.0), at = "16:00"), OFFICE, null)
+        assertEquals(Eligibility.OutOfRange, closed.eligibility)
+        assertEquals(false, closed.isWindowOpen)
+        assertEquals(true, evaluate("09:30")(fix(northOf(OFFICE, 120.0)), OFFICE, null).isWindowOpen)
+    }
+
+    @Test
     fun `fix older than 15 s is stale and locks even when in range`() {
         // Clock 09:30:00, fix 09:29:40 -> 20 s old.
         val old = fix(OFFICE).copy(timeMillis = Instant.parse("2026-10-12T09:29:40Z").toEpochMilli())
