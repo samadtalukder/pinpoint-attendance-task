@@ -27,7 +27,8 @@ import '../domain/usecases/sync_coordinator.dart';
 /// Composition root: the only place that picks implementations. Built once in
 /// the UI isolate and once per worker run.
 class AppDependencies {
-  AppDependencies._({
+  /// Production wiring lives in [create]; tests build their own parts.
+  AppDependencies({
     required this.queue,
     required this.uploadApi,
     required this.modeStore,
@@ -66,7 +67,7 @@ class AppDependencies {
     final db = await AppDatabase.open();
     final modeStore = SharedPrefsMockUploadModeStore();
     final camera = CameraPluginService();
-    return AppDependencies._(
+    return AppDependencies(
       queue: SqfliteUploadQueueRepository(db),
       uploadApi: MockUploadApi(modeStore),
       modeStore: modeStore,
