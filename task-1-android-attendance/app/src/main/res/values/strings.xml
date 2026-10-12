@@ -10,7 +10,6 @@
     <string name="office_not_set">No office location set yet</string>
     <string name="office_coordinates">Lat: %1$s, Lon: %2$s</string>
     <string name="set_office_location">Set Office Location</string>
-    <string name="update_office_location">Update Office Location</string>
     <string name="setting_office_location">Getting GPS fix…</string>
     <string name="office_map_description">Map showing the saved office location</string>
 
