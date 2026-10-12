@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.intelmachin.attendance.R
 import com.intelmachin.attendance.domain.AttendanceRules
+import com.intelmachin.attendance.ui.attendance.formatDistance
 import com.intelmachin.attendance.ui.theme.LockedColors
 import com.intelmachin.attendance.ui.theme.StatusColors
 import kotlin.math.roundToInt
@@ -32,9 +33,10 @@ import kotlin.math.roundToInt
 private val HelperTextSize = 12.sp
 private val HelperLineHeight = 18.sp
 
-/** Status chip plus helper copy. The distance itself lives in the ring. State = icon + text + colour. */
+/** Status chip plus helper copy and the live distance sentence. State = icon + text + colour. */
 @Composable
 fun RangeStatusSection(
+    distanceMeters: Double?,
     isInRange: Boolean?,
     isFixStale: Boolean,
     modifier: Modifier = Modifier,
@@ -68,6 +70,13 @@ fun RangeStatusSection(
                 )
             }
         }
+        Text(
+            text = distanceMeters?.let { stringResource(R.string.distance_away_text, formatDistance(it)) }
+                ?: stringResource(R.string.distance_unavailable_text),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+        )
         helper?.let {
             Text(
                 text = it,
