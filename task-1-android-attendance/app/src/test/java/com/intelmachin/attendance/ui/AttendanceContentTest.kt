@@ -140,9 +140,10 @@ class AttendanceContentTest {
     }
 
     @Test
-    fun `office already set relabels the button`() {
+    fun `office already set keeps the set office label and stays re-settable`() {
         show(outOfRange)
-        compose.onNodeWithText("Update Office Location").assertIsEnabled()
+        compose.onNodeWithText("Set Office Location").assertIsEnabled().performClick()
+        assertEquals(1, setOfficeClicks)
     }
 
     @Test

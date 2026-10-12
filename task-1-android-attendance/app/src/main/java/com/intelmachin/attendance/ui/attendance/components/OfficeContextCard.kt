@@ -89,11 +89,7 @@ fun OfficeContextCard(
                 }
                 Text(
                     text = stringResource(
-                        when {
-                            isSettingOffice -> R.string.setting_office_location
-                            office == null -> R.string.set_office_location
-                            else -> R.string.update_office_location
-                        },
+                        if (isSettingOffice) R.string.setting_office_location else R.string.set_office_location,
                     ),
                     modifier = Modifier.padding(start = 8.dp),
                     fontWeight = FontWeight.SemiBold,
