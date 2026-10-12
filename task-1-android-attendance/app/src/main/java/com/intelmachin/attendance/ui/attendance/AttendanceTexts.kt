@@ -9,11 +9,12 @@ import com.intelmachin.attendance.domain.usecase.Eligibility
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.Locale
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
-private val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+/** Always 12-hour with AM/PM ("09:00 AM"), as in the mockup, even on 24-hour devices. */
+private val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
 
 @Composable
 fun formatClock(time: LocalTime): String = remember(time) { TimeFormatter.format(time) }

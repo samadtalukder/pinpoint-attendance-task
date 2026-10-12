@@ -67,6 +67,7 @@ class AttendanceContentTest {
         compose.onNodeWithText("OUT OF RANGE").assertIsDisplayed()
         compose.onNodeWithText("Move within 50 meters of the office.").assertIsDisplayed()
         compose.onNodeWithText("Lat: 40.7128, Lon: -74.0060").assertIsDisplayed()
+        compose.onNodeWithText("AVAILABLE 09:00 AM - 10:30 AM").assertIsDisplayed()
     }
 
     @Test
