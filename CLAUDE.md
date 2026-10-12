@@ -5,7 +5,7 @@ Senior App Developer assessment for Intelligent Machines Limited. One repo, two 
 ## Layout
 - `task-1-android-attendance/`: Task 1. Native Android, Kotlin, Jetpack Compose, MVVM, StateFlow, DataStore. No Flutter code here.
 - `task-2-flutter-camera-sync/`: Task 2. Flutter, Cubit (flutter_bloc), layered architecture, workmanager, local DB (Drift or sqflite).
-- `screenshots/`: images and GIFs used by the README.
+- `<task folder>/screenshots/`: images and GIFs for that task, used by the README.
 - Each app has its own `CLAUDE.md` with stack-specific rules. Read it when working there.
 
 

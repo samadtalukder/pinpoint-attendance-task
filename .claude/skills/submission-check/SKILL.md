@@ -12,7 +12,7 @@ Run through this list and report pass or fail for each item. Fix nothing silentl
 3. APK file names: `FieldPulse-Attendance-release.apk` and `FieldPulse-CameraSync-release.apk`.
 4. Root README contains every required section: title and description, architecture and main ViewModel/Cubit classes, Generative AI usage with real prompts, how to run both apps, screenshots, assumptions.
 5. `PROMPTS.md` exists and contains the essential prompts. `PROMPTS.raw.md` is NOT committed.
-6. Screenshots or GIFs exist in `screenshots/` and are referenced by the README.
+6. Screenshots or GIFs exist in each task folder's `screenshots/` and are referenced by the README.
 7. No `*.jks`, `key.properties`, `local.properties` or secrets in git history: `git log --all --stat` and `git ls-files`.
 8. Mock API is clearly labeled in code and README.
 9. `git status` is clean and the repo is public.
