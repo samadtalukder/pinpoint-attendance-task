@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,11 +21,29 @@ android {
         testInstrumentationRunner = "com.intelmachin.attendance.HiltTestRunner"
     }
 
+    // Release signing: use the gitignored key.properties when it exists (storeFile, storePassword,
+    // keyAlias, keyPassword). Without it the release build is signed with the local debug key so the
+    // APK still installs for review.
+    val keyProperties = Properties().apply {
+        rootProject.file("key.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+    }
+    signingConfigs {
+        if (keyProperties.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
