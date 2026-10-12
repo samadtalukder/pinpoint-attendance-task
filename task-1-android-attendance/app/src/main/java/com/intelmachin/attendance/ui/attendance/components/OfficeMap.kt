@@ -12,12 +12,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.intelmachin.attendance.domain.model.GeoPoint
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint as OsmGeoPoint
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
 
 private const val MAP_ZOOM = 17.0
 
-/** osmdroid map centred on the saved office. Non-interactive: the card is the control surface. */
+/** osmdroid map centred on the saved office. Background only: no marker or zoom buttons; the Lat/Lon pill marks the spot. */
 @Composable
 fun OfficeMap(office: GeoPoint, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -25,6 +25,7 @@ fun OfficeMap(office: GeoPoint, modifier: Modifier = Modifier) {
         MapView(context).apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(false)
+            zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
             isClickable = false
             controller.setZoom(MAP_ZOOM)
         }
@@ -48,11 +49,7 @@ fun OfficeMap(office: GeoPoint, modifier: Modifier = Modifier) {
         modifier = modifier,
         factory = { mapView },
         update = { map ->
-            val center = OsmGeoPoint(office.latitude, office.longitude)
-            map.controller.setCenter(center)
-            map.overlays.clear()
-            map.overlays.add(Marker(map).apply { position = center; setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM) })
-            map.invalidate()
+            map.controller.setCenter(OsmGeoPoint(office.latitude, office.longitude))
         },
     )
 }
