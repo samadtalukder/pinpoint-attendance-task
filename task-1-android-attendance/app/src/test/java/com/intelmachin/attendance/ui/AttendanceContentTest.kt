@@ -107,7 +107,8 @@ class AttendanceContentTest {
     fun `permission denied shows banner with grant action and disables set office`() {
         show(AttendanceUiState(availability = LocationAvailability.PermissionDenied))
         compose.onNodeWithText("Location permission needed").assertIsDisplayed()
-        compose.onNodeWithText("Set Office Location").assertIsNotEnabled()
+        compose.onNodeWithText("Set Office Location").assertDoesNotExist()
+        compose.onNodeWithText("Mark Attendance").assertDoesNotExist()
         compose.onNodeWithText("Grant permission").performClick()
         assertEquals(1, grantClicks)
     }
@@ -116,6 +117,7 @@ class AttendanceContentTest {
     fun `permanently denied offers open settings`() {
         show(AttendanceUiState(availability = LocationAvailability.PermissionPermanentlyDenied))
         compose.onNodeWithText("Location permission is blocked").assertIsDisplayed()
+        compose.onNodeWithText("Set Office Location").assertDoesNotExist()
         compose.onNodeWithText("Open settings").performClick()
         assertEquals(1, settingsClicks)
     }
@@ -124,6 +126,9 @@ class AttendanceContentTest {
     fun `gps off offers enable gps`() {
         show(AttendanceUiState(availability = LocationAvailability.GpsOff))
         compose.onNodeWithText("GPS is turned off").assertIsDisplayed()
+        compose.onNodeWithText("Set Office Location").assertDoesNotExist()
+        compose.onNodeWithText("Mark Attendance").assertDoesNotExist()
+        compose.onNodeWithText("DISTANCE UNKNOWN").assertDoesNotExist()
         compose.onNodeWithText("Enable GPS").performClick()
         assertEquals(1, gpsClicks)
     }

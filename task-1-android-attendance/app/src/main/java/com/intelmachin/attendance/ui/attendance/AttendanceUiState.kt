@@ -4,7 +4,12 @@ import com.intelmachin.attendance.domain.model.CheckIn
 import com.intelmachin.attendance.domain.model.GeoPoint
 import com.intelmachin.attendance.domain.usecase.Eligibility
 
-enum class LocationAvailability { Ready, Searching, PermissionDenied, PermissionPermanentlyDenied, GpsOff }
+enum class LocationAvailability {
+    Ready, Searching, PermissionDenied, PermissionPermanentlyDenied, GpsOff;
+
+    /** True when location cannot work until the user acts; the screen shows only that prompt. */
+    val blocksScreen: Boolean get() = this == PermissionDenied || this == PermissionPermanentlyDenied || this == GpsOff
+}
 
 /** One-off feedback shown once, then cleared with [AttendanceViewModel.onMessageShown]. */
 enum class AttendanceMessage {

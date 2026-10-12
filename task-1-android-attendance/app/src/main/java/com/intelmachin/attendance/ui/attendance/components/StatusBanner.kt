@@ -1,5 +1,6 @@
 package com.intelmachin.attendance.ui.attendance.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.intelmachin.attendance.R
 import com.intelmachin.attendance.ui.attendance.LocationAvailability
@@ -68,7 +70,11 @@ fun StatusBanner(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
     ) {
         Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 if (content.icon != null) {
                     Icon(content.icon, contentDescription = null, modifier = Modifier.size(24.dp))
                 } else {
@@ -84,12 +90,13 @@ fun StatusBanner(
             Text(
                 text = stringResource(content.body),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             if (content.action != null) {
                 Button(
                     onClick = onAction,
-                    modifier = Modifier.padding(top = 12.dp).heightIn(min = MinTouchTarget),
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 12.dp).heightIn(min = MinTouchTarget),
                 ) {
                     Text(stringResource(content.action))
                 }
