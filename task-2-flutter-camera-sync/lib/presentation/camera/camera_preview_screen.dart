@@ -57,67 +57,58 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Theme.of(context).colorScheme.primary,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
         backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          title: const Text(AppStrings.appName),
-          actions: [
-            IconButton(
-              tooltip: AppStrings.openUploads,
-              icon: const Icon(Icons.cloud_upload_outlined),
-              onPressed: widget.onOpenUploads,
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: BlocConsumer<CameraCubit, CameraState>(
-            listenWhen: (previous, current) =>
-                current.feedback != CameraFeedback.none &&
-                previous.feedback != current.feedback,
-            listener: _showFeedback,
-            builder: (context, state) => switch (state.status) {
-              CameraStatus.initializing => const _Starting(),
-              CameraStatus.ready => _CameraView(
-                state: state,
-                previewSource: widget.previewSource,
-              ),
-              CameraStatus.permissionDenied => CameraMessageView(
-                icon: Icons.no_photography_outlined,
-                title: AppStrings.permissionDeniedTitle,
-                body: AppStrings.permissionDeniedBody,
-                actionLabel: AppStrings.grantPermission,
-                onAction: context.read<CameraCubit>().initialize,
-              ),
-              CameraStatus.permissionPermanentlyDenied => CameraMessageView(
-                icon: Icons.lock_outline,
-                title: AppStrings.permissionBlockedTitle,
-                body: AppStrings.permissionBlockedBody,
-                actionLabel: AppStrings.openSettings,
-                onAction: context.read<CameraCubit>().openSettings,
-              ),
-              CameraStatus.noCamera => const CameraMessageView(
-                icon: Icons.videocam_off_outlined,
-                title: AppStrings.noCameraTitle,
-                body: AppStrings.noCameraBody,
-              ),
-              CameraStatus.error => CameraMessageView(
-                icon: Icons.error_outline,
-                title: AppStrings.cameraErrorTitle,
-                body: AppStrings.cameraErrorBody,
-                actionLabel: AppStrings.tryAgain,
-                onAction: context.read<CameraCubit>().initialize,
-              ),
-            },
+        title: const Text(AppStrings.appName),
+        actions: [
+          IconButton(
+            tooltip: AppStrings.openUploads,
+            icon: const Icon(Icons.cloud_upload_outlined),
+            onPressed: widget.onOpenUploads,
           ),
+        ],
+      ),
+      body: SafeArea(
+        child: BlocConsumer<CameraCubit, CameraState>(
+          listenWhen: (previous, current) =>
+              current.feedback != CameraFeedback.none &&
+              previous.feedback != current.feedback,
+          listener: _showFeedback,
+          builder: (context, state) => switch (state.status) {
+            CameraStatus.initializing => const _Starting(),
+            CameraStatus.ready => _CameraView(
+              state: state,
+              previewSource: widget.previewSource,
+            ),
+            CameraStatus.permissionDenied => CameraMessageView(
+              icon: Icons.no_photography_outlined,
+              title: AppStrings.permissionDeniedTitle,
+              body: AppStrings.permissionDeniedBody,
+              actionLabel: AppStrings.grantPermission,
+              onAction: context.read<CameraCubit>().initialize,
+            ),
+            CameraStatus.permissionPermanentlyDenied => CameraMessageView(
+              icon: Icons.lock_outline,
+              title: AppStrings.permissionBlockedTitle,
+              body: AppStrings.permissionBlockedBody,
+              actionLabel: AppStrings.openSettings,
+              onAction: context.read<CameraCubit>().openSettings,
+            ),
+            CameraStatus.noCamera => const CameraMessageView(
+              icon: Icons.videocam_off_outlined,
+              title: AppStrings.noCameraTitle,
+              body: AppStrings.noCameraBody,
+            ),
+            CameraStatus.error => CameraMessageView(
+              icon: Icons.error_outline,
+              title: AppStrings.cameraErrorTitle,
+              body: AppStrings.cameraErrorBody,
+              actionLabel: AppStrings.tryAgain,
+              onAction: context.read<CameraCubit>().initialize,
+            ),
+          },
         ),
       ),
     );

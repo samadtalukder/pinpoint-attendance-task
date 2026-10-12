@@ -6,6 +6,7 @@ import 'package:pinpoint_capture/data/repositories/sqflite_upload_queue_reposito
 import 'package:pinpoint_capture/domain/entities/new_upload.dart';
 import 'package:pinpoint_capture/domain/entities/pending_upload.dart';
 import 'package:pinpoint_capture/domain/entities/upload_status.dart';
+import 'package:pinpoint_capture/domain/services/queue_change_bus.dart';
 import 'package:pinpoint_capture/domain/services/upload_api.dart';
 import 'package:pinpoint_capture/domain/usecases/process_upload_queue_use_case.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -27,6 +28,16 @@ class FakeUploadApi implements UploadApi {
     uploaded.add(item.fileName);
     return Future.value();
   }
+}
+
+class CountingBus implements QueueChangeBus {
+  int notifications = 0;
+
+  @override
+  Stream<void> get changes => const Stream.empty();
+
+  @override
+  void notify() => notifications++;
 }
 
 void main() {
@@ -125,5 +136,22 @@ void main() {
     expect(await process(), SyncResult.completed);
 
     expect(api.uploaded, ['a']);
+  });
+
+  test('notifies the UI after every row change', () async {
+    final bus = CountingBus();
+    final observed = ProcessUploadQueueUseCase(
+      repo,
+      api,
+      timeout: Duration.zero,
+      changeBus: bus,
+    );
+    await enqueue(['a', 'b']);
+    api.failures['b'] = const UploadException('offline');
+
+    await observed();
+
+    // a: uploading + synced, b: uploading + failed.
+    expect(bus.notifications, 4);
   });
 }

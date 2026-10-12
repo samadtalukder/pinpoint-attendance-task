@@ -16,7 +16,7 @@ void main() {
     cache = await Directory.systemTemp.createTemp('store_cache');
     store = LocalImageStore(
       () async => root,
-      clock: () => DateTime.fromMicrosecondsSinceEpoch(42),
+      clock: () => DateTime(2026, 10, 12, 9, 5, 3),
     );
     addTearDown(() async {
       await root.delete(recursive: true);
@@ -35,7 +35,7 @@ void main() {
 
     final stored = await store.persist(image);
 
-    expect(stored.fileName, '42_a.jpg');
+    expect(stored.fileName, 'IMG_20261012_090503.jpg');
     expect(stored.sizeBytes, 4);
     expect(
       p.dirname(stored.filePath),
@@ -43,6 +43,16 @@ void main() {
     );
     expect(File(stored.filePath).existsSync(), isTrue);
     expect(File(image.path).existsSync(), isFalse);
+  });
+
+  test('photos taken in the same second get a numeric suffix', () async {
+    final first = await store.persist(await photo('a.jpg'));
+    final second = await store.persist(await photo('b.jpg'));
+
+    expect(first.fileName, 'IMG_20261012_090503.jpg');
+    expect(second.fileName, 'IMG_20261012_090503_2.jpg');
+    expect(File(first.filePath).existsSync(), isTrue);
+    expect(File(second.filePath).existsSync(), isTrue);
   });
 
   test('delete removes the file and tolerates a missing one', () async {

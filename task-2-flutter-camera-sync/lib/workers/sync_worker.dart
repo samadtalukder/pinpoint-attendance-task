@@ -14,7 +14,6 @@ void callbackDispatcher() {
     try {
       final deps = await AppDependencies.create();
       final result = await deps.processUploadQueue();
-      deps.changeBus.notify();
       // false asks the OS to retry with the exponential backoff set when
       // the work was scheduled.
       return result != SyncResult.failed;

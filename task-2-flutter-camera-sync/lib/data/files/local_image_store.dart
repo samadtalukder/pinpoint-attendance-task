@@ -23,7 +23,7 @@ class LocalImageStore implements ImageStore {
     );
     await dir.create(recursive: true);
 
-    final fileName = '${_clock().microsecondsSinceEpoch}_${image.name}';
+    final fileName = await _uniqueName(dir, image.name);
     final target = File(p.join(dir.path, fileName));
     final source = File(image.path);
     // Copy then delete: rename fails across volumes (cache vs documents).
@@ -35,6 +35,25 @@ class LocalImageStore implements ImageStore {
       fileName: fileName,
       sizeBytes: await target.length(),
     );
+  }
+
+  /// IMG_yyyyMMdd_HHmmss.jpg, with _2, _3 … when taken in the same second.
+  Future<String> _uniqueName(Directory dir, String sourceName) async {
+    final now = _clock();
+    String two(int v) => v.toString().padLeft(2, '0');
+    final base =
+        '${StorageConstants.imageNamePrefix}${now.year}${two(now.month)}'
+        '${two(now.day)}_${two(now.hour)}${two(now.minute)}${two(now.second)}';
+    final extension = p.extension(sourceName).isEmpty
+        ? StorageConstants.defaultImageExtension
+        : p.extension(sourceName);
+
+    var name = '$base$extension';
+    var counter = 1;
+    while (await File(p.join(dir.path, name)).exists()) {
+      name = '${base}_${++counter}$extension';
+    }
+    return name;
   }
 
   @override
