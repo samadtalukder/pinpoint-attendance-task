@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Attendance</string>
+    <string name="app_name">OnSite Attendance</string>
     <string name="attendance_title">Attendance</string>
 
     <!-- Office context card -->
