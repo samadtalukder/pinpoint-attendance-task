@@ -39,7 +39,11 @@ class AppDependencies {
     required this.cameraPermission,
     required this.imageStore,
   }) : enqueueBatch = EnqueueBatchUseCase(imageStore, queue, scheduler),
-       processUploadQueue = ProcessUploadQueueUseCase(queue, uploadApi),
+       processUploadQueue = ProcessUploadQueueUseCase(
+         queue,
+         uploadApi,
+         changeBus: changeBus,
+       ),
        syncCoordinator = SyncCoordinator(queue, connectivity, scheduler);
 
   final UploadQueueRepository queue;

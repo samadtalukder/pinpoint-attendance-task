@@ -45,4 +45,17 @@ abstract final class ZoomConstants {
 abstract final class StorageConstants {
   /// Folder under the app documents directory for queued images.
   static const String capturesDirectory = 'captures';
+
+  /// Stored images are named IMG_yyyyMMdd_HHmmss.jpg.
+  static const String imageNamePrefix = 'IMG_';
+  static const String defaultImageExtension = '.jpg';
+}
+
+/// Demo batch added from the Upload Manager menu, so the queue can be shown
+/// without taking photos.
+abstract final class SampleConstants {
+  static const int imageCount = 4;
+  static const int imageSizeBytes = 1800000;
+  static const String pathPrefix = 'sample://';
+  static const String namePrefix = 'SAMPLE_';
 }
