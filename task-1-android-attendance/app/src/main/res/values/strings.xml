@@ -3,4 +3,66 @@
     <string name="app_name">Attendance</string>
     <string name="attendance_title">Attendance</string>
     <string name="back">Back</string>
+
+    <!-- Office context card -->
+    <string name="step_office_context">STEP 1: OFFICE CONTEXT</string>
+    <string name="office_helper">To mark your attendance, ensure your current office location is correctly identified.</string>
+    <string name="office_not_set">No office location set yet</string>
+    <string name="office_coordinates">Lat: %1$s, Lon: %2$s</string>
+    <string name="set_office_location">Set Office Location</string>
+    <string name="update_office_location">Update Office Location</string>
+    <string name="setting_office_location">Getting GPS fix…</string>
+    <string name="office_map_description">Map showing the saved office location</string>
+
+    <!-- Distance ring and range chip -->
+    <string name="distance_meters">%1$dm</string>
+    <string name="distance_kilometers">%1$.1fkm</string>
+    <string name="distance_unknown">--</string>
+    <string name="distance_away_label">AWAY</string>
+    <string name="distance_away_text">You are %1$s away from the office</string>
+    <string name="distance_unavailable_text">Distance appears once the office and your location are known</string>
+    <string name="ring_description">%1$s. %2$s</string>
+    <string name="chip_in_range">IN RANGE</string>
+    <string name="chip_out_of_range">OUT OF RANGE</string>
+    <string name="chip_unknown">DISTANCE UNKNOWN</string>
+    <string name="range_helper_in">You are within the office radius. Check-in is allowed.</string>
+    <string name="range_helper_out">Move within %1$d meters of the designated office location to enable check-in.</string>
+    <string name="range_helper_unknown">Set the office location and wait for a GPS fix.</string>
+    <string name="accuracy_text">GPS accuracy ±%1$dm</string>
+
+    <!-- Mark attendance card -->
+    <string name="mark_attendance">Mark Attendance</string>
+    <string name="marking_attendance">Marking…</string>
+    <string name="available_window">AVAILABLE %1$s - %2$s</string>
+    <string name="mark_locked_description">Locked. %1$s</string>
+    <string name="mark_unlocked_description">Unlocked. Ready to mark attendance.</string>
+    <string name="checked_in_at">Checked in at %1$s</string>
+    <string name="reason_no_office">Set the office location first.</string>
+    <string name="reason_no_fix">Waiting for a GPS fix.</string>
+    <string name="reason_mock_location">Mock location detected. Turn off mock locations to continue.</string>
+    <string name="reason_low_accuracy">GPS accuracy too low (±%1$dm). Move to open sky.</string>
+    <string name="reason_out_of_range">Move within %1$d meters of the office.</string>
+    <string name="reason_outside_window">Attendance is only open %1$s - %2$s.</string>
+    <string name="reason_ready">You are in range. Tap to mark attendance.</string>
+
+    <!-- Status banners -->
+    <string name="permission_denied_title">Location permission needed</string>
+    <string name="permission_denied_body">Allow location access so we can measure your distance from the office.</string>
+    <string name="action_grant_permission">Grant permission</string>
+    <string name="permission_blocked_title">Location permission is blocked</string>
+    <string name="permission_blocked_body">Android will not ask again. Enable Location for this app in Settings.</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="gps_off_title">GPS is turned off</string>
+    <string name="gps_off_body">Turn on location services to measure your distance.</string>
+    <string name="action_enable_gps">Enable GPS</string>
+    <string name="searching_title">Finding your location…</string>
+    <string name="searching_body">Waiting for a GPS fix. Moving outdoors helps.</string>
+
+    <!-- One-off messages -->
+    <string name="message_office_saved">Office location saved</string>
+    <string name="message_office_no_fix">Could not get a GPS fix. Try again.</string>
+    <string name="message_office_mock">Mock location detected. Office location was not saved.</string>
+    <string name="message_office_low_accuracy">GPS accuracy is too low. Move to open sky and try again.</string>
+    <string name="message_checked_in">Attendance marked</string>
+    <string name="message_check_in_rejected">Could not mark attendance. Check range, accuracy and time.</string>
 </resources>
