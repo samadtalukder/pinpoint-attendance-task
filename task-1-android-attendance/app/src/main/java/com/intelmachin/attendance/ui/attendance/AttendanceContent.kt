@@ -51,7 +51,7 @@ fun AttendanceContent(
         )
         DistanceRing(state.distanceMeters, state.isInRange)
         RangeStatusSection(state.distanceMeters, state.isInRange, state.accuracyMeters, state.isFixStale)
-        MarkAttendanceCard(state.eligibility, state.isMarking, onMarkAttendance)
+        MarkAttendanceCard(state.eligibility, state.isWindowOpen, state.isMarking, onMarkAttendance)
     }
 }
 

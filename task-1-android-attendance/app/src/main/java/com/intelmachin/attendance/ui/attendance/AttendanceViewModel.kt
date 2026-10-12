@@ -71,6 +71,7 @@ class AttendanceViewModel @Inject constructor(
             accuracyMeters = fix?.accuracyMeters,
             isFixStale = check.isStale,
             eligibility = check.eligibility,
+            isWindowOpen = check.isWindowOpen,
             checkIn = lastCheckIn,
             isSettingOffice = local.isSettingOffice,
             isMarking = local.isMarking,

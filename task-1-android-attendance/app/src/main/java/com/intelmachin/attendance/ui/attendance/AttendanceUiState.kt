@@ -21,6 +21,8 @@ data class AttendanceUiState(
     /** Distance is from an old fix; GPS updates have stopped. */
     val isFixStale: Boolean = false,
     val eligibility: Eligibility = Eligibility.NoOffice,
+    /** False outside 09:00-10:30; the card greys out its window hint. */
+    val isWindowOpen: Boolean = true,
     val checkIn: CheckIn? = null,
     val isSettingOffice: Boolean = false,
     val isMarking: Boolean = false,

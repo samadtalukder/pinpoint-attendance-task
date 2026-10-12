@@ -39,9 +39,13 @@ import com.intelmachin.attendance.ui.theme.StatusColors
 private val CardRadius = 20.dp
 private val MinTouchTarget = 48.dp
 
+/** Material 3 opacity for disabled content. */
+private const val DisabledAlpha = 0.38f
+
 @Composable
 fun MarkAttendanceCard(
     eligibility: Eligibility,
+    isWindowOpen: Boolean,
     isMarking: Boolean,
     onMark: () -> Unit,
     modifier: Modifier = Modifier,
@@ -53,6 +57,9 @@ fun MarkAttendanceCard(
     val description = if (unlocked) stringResource(R.string.mark_unlocked_description)
     else stringResource(R.string.mark_locked_description, reason)
     val checkedIn = eligibility is Eligibility.AlreadyCheckedIn
+    // Outside the window the lock and window hint use the disabled colour, like the button.
+    val hintColor = if (isWindowOpen) MaterialTheme.colorScheme.onSurfaceVariant
+    else MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledAlpha)
 
     Box(
         modifier = modifier
@@ -68,7 +75,7 @@ fun MarkAttendanceCard(
             Icon(
                 imageVector = if (unlocked || checkedIn) Icons.Outlined.CheckCircle else Icons.Outlined.Lock,
                 contentDescription = null,
-                tint = if (unlocked || checkedIn) StatusColors.inRange else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (unlocked || checkedIn) StatusColors.inRange else hintColor,
                 modifier = Modifier.size(40.dp),
             )
             Button(
@@ -94,7 +101,7 @@ fun MarkAttendanceCard(
                 ).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = hintColor,
             )
         }
     }

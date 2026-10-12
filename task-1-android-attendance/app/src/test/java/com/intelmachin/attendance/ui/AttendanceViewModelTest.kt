@@ -119,6 +119,7 @@ class AttendanceViewModelTest {
         location.emit(LocationStatus.Available(fix(OFFICE, at = "11:00")))
         assertEquals(true, s().isInRange)
         assertEquals(Eligibility.OutsideWindow, s().eligibility)
+        assertEquals(false, s().isWindowOpen)
         assertFalse(s().canMarkAttendance)
     }
 
