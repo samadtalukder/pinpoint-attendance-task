@@ -1,7 +1,9 @@
 package com.intelmachin.attendance.ui.attendance
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,6 +38,13 @@ fun AttendanceContent(
     modifier: Modifier = Modifier,
     officeMap: @Composable (GeoPoint) -> Unit = { OfficeMap(it, Modifier.fillMaxWidth().height(MAP_HEIGHT)) },
 ) {
+    if (state.availability.blocksScreen) {
+        // Nothing else is meaningful without permission or GPS: show only the prompt, centered.
+        Box(modifier = modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+            StatusBanner(state.availability, onGrantPermission, onOpenSettings, onEnableGps)
+        }
+        return
+    }
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
