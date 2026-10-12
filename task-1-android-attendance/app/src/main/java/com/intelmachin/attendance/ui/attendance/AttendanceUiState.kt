@@ -18,6 +18,8 @@ data class AttendanceUiState(
     /** Null while distance is unknown. */
     val isInRange: Boolean? = null,
     val accuracyMeters: Float? = null,
+    /** Distance is from an old fix; GPS updates have stopped. */
+    val isFixStale: Boolean = false,
     val eligibility: Eligibility = Eligibility.NoOffice,
     val checkIn: CheckIn? = null,
     val isSettingOffice: Boolean = false,

@@ -6,6 +6,8 @@ data class LocationFix(
     val point: GeoPoint,
     val accuracyMeters: Float,
     val isMock: Boolean,
+    /** Wall-clock time of the fix, epoch millis. */
+    val timeMillis: Long,
 )
 
 /** Moment of a successful check-in, as epoch millis. */

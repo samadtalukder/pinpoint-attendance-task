@@ -43,7 +43,7 @@ class AttendanceViewModel @Inject constructor(
 
     private val local = MutableStateFlow(Local())
 
-    /** Re-evaluates the time window while the screen stays open. */
+    /** Re-evaluates time-based rules (window, fix age) while the screen stays open. */
     private val clockTick = flow {
         while (true) {
             emit(Unit)
@@ -69,6 +69,7 @@ class AttendanceViewModel @Inject constructor(
             distanceMeters = check.distanceMeters,
             isInRange = check.isInRange,
             accuracyMeters = fix?.accuracyMeters,
+            isFixStale = check.isStale,
             eligibility = check.eligibility,
             checkIn = lastCheckIn,
             isSettingOffice = local.isSettingOffice,
@@ -115,7 +116,7 @@ class AttendanceViewModel @Inject constructor(
     fun onMessageShown() = local.update { it.copy(message = null) }
 
     private companion object {
-        const val CLOCK_TICK_MS = 30_000L
+        const val CLOCK_TICK_MS = 5_000L
         const val STOP_TIMEOUT_MS = 5_000L
     }
 }

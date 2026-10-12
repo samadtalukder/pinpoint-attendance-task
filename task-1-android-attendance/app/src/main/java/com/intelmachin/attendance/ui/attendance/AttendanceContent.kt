@@ -50,7 +50,7 @@ fun AttendanceContent(
             map = officeMap,
         )
         DistanceRing(state.distanceMeters, state.isInRange)
-        RangeStatusSection(state.distanceMeters, state.isInRange, state.accuracyMeters)
+        RangeStatusSection(state.distanceMeters, state.isInRange, state.accuracyMeters, state.isFixStale)
         MarkAttendanceCard(state.eligibility, state.isMarking, onMarkAttendance)
     }
 }

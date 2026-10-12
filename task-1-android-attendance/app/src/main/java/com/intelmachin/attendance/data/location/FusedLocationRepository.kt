@@ -48,11 +48,12 @@ class FusedLocationRepository @Inject constructor(
 ) : LocationRepository {
 
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-    private val refreshTick = MutableStateFlow(0)
+    /** StateFlow drops equal values, so [refresh] restarts updates only when permission really changed. */
+    private val permissionGranted = MutableStateFlow(hasPermission())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val status: Flow<LocationStatus> = refreshTick.flatMapLatest {
-        if (!hasPermission()) {
+    override val status: Flow<LocationStatus> = permissionGranted.flatMapLatest { granted ->
+        if (!granted) {
             flowOf(LocationStatus.PermissionDenied)
         } else {
             locationEnabled().flatMapLatest { enabled ->
@@ -65,7 +66,7 @@ class FusedLocationRepository @Inject constructor(
     }
 
     override fun refresh() {
-        refreshTick.value++
+        permissionGranted.value = hasPermission()
     }
 
     @SuppressLint("MissingPermission")
@@ -117,6 +118,7 @@ class FusedLocationRepository @Inject constructor(
     private fun Location.toFix() = LocationFix(
         point = GeoPoint(latitude, longitude),
         accuracyMeters = accuracy,
+        timeMillis = time,
         isMock = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) isMock else @Suppress("DEPRECATION") isFromMockProvider,
     )
 

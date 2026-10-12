@@ -7,10 +7,10 @@ import com.intelmachin.attendance.domain.model.LocationStatus
 import kotlinx.coroutines.flow.Flow
 
 interface LocationRepository {
-    /** Live permission, GPS and fix state. Re-emits after [refresh]. */
+    /** Live permission, GPS and fix state. */
     val status: Flow<LocationStatus>
 
-    /** Re-reads permission and GPS state, e.g. after a permission dialog or settings change. */
+    /** Re-reads permission state, e.g. after the permission dialog or app settings. */
     fun refresh()
 
     /** One fresh high-accuracy fix, or null when none can be obtained. */

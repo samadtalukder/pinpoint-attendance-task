@@ -35,6 +35,7 @@ fun Eligibility.reasonText(): String = when (this) {
     Eligibility.Eligible -> stringResource(R.string.reason_ready)
     Eligibility.NoOffice -> stringResource(R.string.reason_no_office)
     Eligibility.NoFix -> stringResource(R.string.reason_no_fix)
+    Eligibility.StaleFix -> stringResource(R.string.reason_stale_fix)
     Eligibility.MockLocation -> stringResource(R.string.reason_mock_location)
     is Eligibility.LowAccuracy -> stringResource(R.string.reason_low_accuracy, accuracyMeters.roundToInt())
     Eligibility.OutOfRange -> stringResource(

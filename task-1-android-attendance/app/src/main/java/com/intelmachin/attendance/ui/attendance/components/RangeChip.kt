@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -33,6 +34,7 @@ fun RangeStatusSection(
     distanceMeters: Double?,
     isInRange: Boolean?,
     accuracyMeters: Float?,
+    isFixStale: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val (label, helper, tint, container, icon) = when (isInRange) {
@@ -77,6 +79,20 @@ fun RangeStatusSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (isFixStale) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Warning, contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = stringResource(R.string.stale_fix_warning),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
+        }
         accuracyMeters?.let {
             Text(
                 text = stringResource(R.string.accuracy_text, it.roundToInt()),

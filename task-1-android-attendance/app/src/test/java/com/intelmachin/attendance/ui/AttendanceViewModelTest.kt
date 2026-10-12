@@ -116,9 +116,20 @@ class AttendanceViewModelTest {
         office.save(OFFICE)
         val vm = viewModel("11:00")
         val s = state(vm)
-        location.emit(LocationStatus.Available(fix(OFFICE)))
+        location.emit(LocationStatus.Available(fix(OFFICE, at = "11:00")))
         assertEquals(true, s().isInRange)
         assertEquals(Eligibility.OutsideWindow, s().eligibility)
+        assertFalse(s().canMarkAttendance)
+    }
+
+    @Test
+    fun `stale fix flags state and locks marking`() = runTest {
+        office.save(OFFICE)
+        val vm = viewModel("09:30")
+        val s = state(vm)
+        location.emit(LocationStatus.Available(fix(OFFICE, at = "09:29")))
+        assertTrue(s().isFixStale)
+        assertEquals(Eligibility.StaleFix, s().eligibility)
         assertFalse(s().canMarkAttendance)
     }
 
