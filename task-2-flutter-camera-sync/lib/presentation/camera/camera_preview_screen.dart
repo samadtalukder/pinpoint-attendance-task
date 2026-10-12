@@ -181,12 +181,14 @@ class _CameraView extends StatelessWidget {
               final focus = state.focus;
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTapUp: (details) => cubit.focusAt(
-                  Offset(
-                    details.localPosition.dx / size.width,
-                    details.localPosition.dy / size.height,
-                  ),
-                ),
+                onTapUp: (details) {
+                  cubit.focusAt(
+                    Offset(
+                      details.localPosition.dx / size.width,
+                      details.localPosition.dy / size.height,
+                    ),
+                  );
+                },
                 onScaleStart: (_) => cubit.pinchStarted(),
                 onScaleUpdate: (details) {
                   if (details.pointerCount >= 2) {

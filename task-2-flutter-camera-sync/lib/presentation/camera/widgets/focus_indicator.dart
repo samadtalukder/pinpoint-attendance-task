@@ -10,7 +10,7 @@ class FocusIndicator extends StatelessWidget {
   final int id;
 
   static const double size = 72;
-  static const Duration duration = Duration(milliseconds: 1200);
+  static const Duration duration = Duration(milliseconds: 1500);
   static const double _settleEnd = 0.25;
   static const double _holdEnd = 0.7;
   static const double _startScale = 1.5;
