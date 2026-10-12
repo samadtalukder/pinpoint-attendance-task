@@ -64,7 +64,8 @@ class AttendanceContentTest {
     fun `out of range shows locked card, distance text and chip`() {
         show(outOfRange)
         compose.onNodeWithText("Mark Attendance").assertIsNotEnabled()
-        compose.onNodeWithText("You are 120m away from the office").assertIsDisplayed()
+        compose.onNodeWithContentDescription("120m AWAY. OUT OF RANGE").assertExists()
+        compose.onNodeWithText("You are 120m away from the office").assertDoesNotExist()
         compose.onNodeWithText("OUT OF RANGE").assertIsDisplayed()
         compose.onNodeWithText("Move within 50 meters of the office.").assertDoesNotExist()
         compose.onNodeWithContentDescription("Locked. Move within 50 meters of the office.").assertExists()

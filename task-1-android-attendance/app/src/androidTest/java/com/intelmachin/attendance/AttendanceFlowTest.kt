@@ -68,13 +68,13 @@ class AttendanceFlowTest {
 
         // Walk 120 m away: out of range, still locked.
         gps.moveTo(northOf(OFFICE, 120.0))
-        awaitText("You are 120m away from the office")
+        await(hasContentDescription("120m AWAY. OUT OF RANGE"))
         compose.onNodeWithText("OUT OF RANGE").performScrollTo()
         compose.onNodeWithText("Mark Attendance").performScrollTo().assertIsNotEnabled()
 
         // Walk back to 20 m: in range, unlocked.
         gps.moveTo(northOf(OFFICE, 20.0))
-        awaitText("You are 20m away from the office")
+        await(hasContentDescription("20m AWAY. IN RANGE"))
         compose.onNodeWithText("IN RANGE").performScrollTo()
         compose.onNodeWithText("Mark Attendance").performScrollTo().assertIsEnabled().performClick()
 
