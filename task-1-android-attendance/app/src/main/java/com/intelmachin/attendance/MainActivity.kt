@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Text
+import com.intelmachin.attendance.ui.attendance.AttendanceScreen
 import com.intelmachin.attendance.ui.theme.AttendanceTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AttendanceTheme {
-                Text(getString(R.string.attendance_title))
+                AttendanceScreen(onBack = ::finish)
             }
         }
     }
