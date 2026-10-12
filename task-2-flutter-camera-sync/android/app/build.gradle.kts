@@ -13,7 +13,7 @@ plugins {
 
 android {
     namespace = "com.intelmachine.pinpoint_capture"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

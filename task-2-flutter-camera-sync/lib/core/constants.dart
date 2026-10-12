@@ -21,4 +21,13 @@ abstract final class SyncConstants {
   static const Duration mockSlowLatency = Duration(seconds: 30);
 
   static const String modePreferenceKey = 'mock_upload_mode';
+
+  /// Unique work name: only one sync job exists at a time, so there is a
+  /// single uploader.
+  static const String uniqueWorkName = 'pinpoint.upload_sync';
+  static const String syncTaskName = 'upload_queue';
+
+  /// IsolateNameServer name the UI registers to hear queue changes made by
+  /// the worker.
+  static const String queueChangePortName = 'pinpoint.queue_changes';
 }
