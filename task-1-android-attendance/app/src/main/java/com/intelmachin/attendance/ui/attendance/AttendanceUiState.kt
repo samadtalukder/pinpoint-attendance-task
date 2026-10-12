@@ -1,0 +1,28 @@
+package com.intelmachin.attendance.ui.attendance
+
+import com.intelmachin.attendance.domain.model.CheckIn
+import com.intelmachin.attendance.domain.model.GeoPoint
+import com.intelmachin.attendance.domain.usecase.Eligibility
+
+enum class LocationAvailability { Ready, Searching, PermissionDenied, PermissionPermanentlyDenied, GpsOff }
+
+/** One-off feedback shown once, then cleared with [AttendanceViewModel.onMessageShown]. */
+enum class AttendanceMessage {
+    OfficeSaved, OfficeNoFix, OfficeMockLocation, OfficeLowAccuracy, CheckedIn, CheckInRejected
+}
+
+data class AttendanceUiState(
+    val availability: LocationAvailability = LocationAvailability.Searching,
+    val office: GeoPoint? = null,
+    val distanceMeters: Double? = null,
+    /** Null while distance is unknown. */
+    val isInRange: Boolean? = null,
+    val accuracyMeters: Float? = null,
+    val eligibility: Eligibility = Eligibility.NoOffice,
+    val checkIn: CheckIn? = null,
+    val isSettingOffice: Boolean = false,
+    val isMarking: Boolean = false,
+    val message: AttendanceMessage? = null,
+) {
+    val canMarkAttendance: Boolean get() = eligibility == Eligibility.Eligible && !isMarking
+}
