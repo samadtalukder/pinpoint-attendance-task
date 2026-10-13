@@ -189,6 +189,10 @@ Demo (set office, move out of range, move within 50 m, mark attendance):
 
 ### Task 2: Camera and Sync
 
+| Camera preview | Batch ready | Upload failed, retrying | Synced |
+|---|---|---|---|
+| ![Camera preview](task-2-flutter-camera-sync/screenshots/01-camera-preview.png) | ![Batch ready](task-2-flutter-camera-sync/screenshots/02-batch-ready.png) | ![Retrying](task-2-flutter-camera-sync/screenshots/03-upload-retrying.png) | ![Synced](task-2-flutter-camera-sync/screenshots/04-upload-synced.png) |
+
 ![Pinpoint Capture demo: zoom, tap-to-focus, capture batches, failed upload stays queued, retry succeeds](Demo/task-2-camera-sync.gif)
 
 ## Release APK
