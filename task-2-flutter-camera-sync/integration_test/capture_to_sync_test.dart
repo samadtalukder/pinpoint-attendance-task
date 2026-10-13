@@ -111,17 +111,15 @@ void main() {
       expect(await deps.processUploadQueue(), SyncResult.paused);
       expect(await deps.queue.getUnsynced(), hasLength(2));
 
-      // Connection comes back: flip the mock to success from the camera's
-      // options sheet, resume, and the worker drains the queue.
-      await tester.tap(find.text(AppStrings.startNewBatch));
+      // Connection comes back: flip the mock to success from the manager's
+      // menu, resume, and the worker drains the queue.
+      await tester.tap(find.byTooltip(AppStrings.moreOptions));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip(AppStrings.cameraOptions));
+      await tester.tap(find.text(AppStrings.menuMockMode));
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.mockSuccess));
       await tester.pumpAndSettle();
       await tester.tapAt(const Offset(10, 10)); // dismiss the sheet
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('batch_thumbnail')));
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.resumeAll.toUpperCase()));
       await tester.pumpAndSettle();

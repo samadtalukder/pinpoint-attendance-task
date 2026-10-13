@@ -42,7 +42,6 @@ void main() {
   var capabilities = const ZoomCapabilities(min: 0.5, max: 8);
   var uploadsOpened = 0;
   var closed = 0;
-  var optionsOpened = 0;
 
   setUpAll(() {
     registerFallbackValue(<CapturedImage>[]);
@@ -53,7 +52,6 @@ void main() {
     capabilities = const ZoomCapabilities(min: 0.5, max: 8);
     uploadsOpened = 0;
     closed = 0;
-    optionsOpened = 0;
     camera = MockCamera();
     permission = MockPermission();
     enqueue = MockEnqueue();
@@ -92,7 +90,6 @@ void main() {
             previewSource: FakePreview(),
             onOpenUploads: () => uploadsOpened++,
             onClose: () => closed++,
-            onOpenOptions: () => optionsOpened++,
           ),
         ),
       ),
@@ -232,14 +229,14 @@ void main() {
     expect(uploadsOpened, 1);
   });
 
-  testWidgets('close and options buttons call back', (tester) async {
+  testWidgets('close and upload buttons call back', (tester) async {
     await pumpScreen(tester);
 
     await tester.tap(find.byTooltip(AppStrings.closeCamera));
-    await tester.tap(find.byTooltip(AppStrings.cameraOptions));
+    await tester.tap(find.byTooltip(AppStrings.openUploads));
 
     expect(closed, 1);
-    expect(optionsOpened, 1);
+    expect(uploadsOpened, 1);
   });
 
   testWidgets('flash button toggles the flash', (tester) async {

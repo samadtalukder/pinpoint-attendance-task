@@ -11,9 +11,16 @@ import 'widgets/upload_tile.dart';
 
 /// Pending uploads with live status. Expects an [UploadQueueCubit] above it.
 class UploadManagerScreen extends StatelessWidget {
-  const UploadManagerScreen({super.key, required this.onStartNewBatch});
+  const UploadManagerScreen({
+    super.key,
+    required this.onStartNewBatch,
+    required this.onOpenMockMode,
+  });
 
   final VoidCallback onStartNewBatch;
+
+  /// Opens the picker for the mock upload result (no real API exists).
+  final VoidCallback onOpenMockMode;
 
   @override
   Widget build(BuildContext context) {
@@ -43,11 +50,16 @@ class UploadManagerScreen extends StatelessWidget {
               PopupMenuButton<_MenuAction>(
                 tooltip: AppStrings.moreOptions,
                 onSelected: (action) => switch (action) {
+                  _MenuAction.mockMode => onOpenMockMode(),
                   _MenuAction.retryNow => cubit.retryNow(),
                   _MenuAction.addSample => cubit.addSampleBatch(),
                   _MenuAction.clearSynced => cubit.clearSynced(),
                 },
                 itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: _MenuAction.mockMode,
+                    child: Text(AppStrings.menuMockMode),
+                  ),
                   PopupMenuItem(
                     value: _MenuAction.retryNow,
                     enabled: state.pendingCount > 0 && !state.isUploading,
@@ -99,7 +111,7 @@ class UploadManagerScreen extends StatelessWidget {
   }
 }
 
-enum _MenuAction { retryNow, addSample, clearSynced }
+enum _MenuAction { mockMode, retryNow, addSample, clearSynced }
 
 class _Body extends StatelessWidget {
   const _Body({required this.state});

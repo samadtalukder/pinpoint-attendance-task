@@ -57,11 +57,13 @@ void main() {
   var rows = <PendingUpload>[];
   var isOnline = true;
   var startNewBatchTaps = 0;
+  var mockModeOpened = 0;
 
   setUp(() {
     rows = [];
     isOnline = true;
     startNewBatchTaps = 0;
+    mockModeOpened = 0;
     queue = MockQueue();
     connectivity = MockConnectivity();
     scheduler = MockScheduler();
@@ -102,6 +104,7 @@ void main() {
           value: cubit,
           child: UploadManagerScreen(
             onStartNewBatch: () => startNewBatchTaps++,
+            onOpenMockMode: () => mockModeOpened++,
           ),
         ),
       ),
@@ -227,6 +230,17 @@ void main() {
 
     verify(() => scheduler.requestSync(immediate: true)).called(1);
     expect(find.text(AppStrings.feedbackRetrying), findsOneWidget);
+  });
+
+  testWidgets('menu opens the mock result picker', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(AppStrings.moreOptions));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.menuMockMode));
+    await tester.pumpAndSettle();
+
+    expect(mockModeOpened, 1);
   });
 
   testWidgets('menu clears synced uploads', (tester) async {

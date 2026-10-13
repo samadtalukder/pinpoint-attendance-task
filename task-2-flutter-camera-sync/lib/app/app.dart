@@ -33,14 +33,13 @@ class PinpointApp extends StatelessWidget {
             previewSource: dependencies.cameraPreview,
             onOpenUploads: () => _openUploads(context),
             onClose: SystemNavigator.pop,
-            onOpenOptions: () => _openOptions(context),
           ),
         ),
       ),
     );
   }
 
-  void _openOptions(BuildContext context) {
+  void _openMockMode(BuildContext context) {
     final cubit = MockModeCubit(dependencies.modeStore)..load();
     MockModeSheet.show(context, cubit).whenComplete(cubit.close);
   }
@@ -59,6 +58,7 @@ class PinpointApp extends StatelessWidget {
           )..initialize(),
           child: UploadManagerScreen(
             onStartNewBatch: () => Navigator.of(routeContext).pop(),
+            onOpenMockMode: () => _openMockMode(routeContext),
           ),
         ),
       ),

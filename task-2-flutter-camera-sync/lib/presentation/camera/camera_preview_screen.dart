@@ -23,13 +23,11 @@ class CameraPreviewScreen extends StatefulWidget {
     required this.previewSource,
     required this.onOpenUploads,
     required this.onClose,
-    required this.onOpenOptions,
   });
 
   final CameraPreviewSource previewSource;
   final VoidCallback onOpenUploads;
   final VoidCallback onClose;
-  final VoidCallback onOpenOptions;
 
   @override
   State<CameraPreviewScreen> createState() => _CameraPreviewScreenState();
@@ -107,9 +105,9 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
                           const SizedBox(width: 8),
                         ],
                         CameraIconButton(
-                          icon: Icons.settings_outlined,
-                          label: AppStrings.cameraOptions,
-                          onPressed: widget.onOpenOptions,
+                          icon: Icons.cloud_upload_outlined,
+                          label: AppStrings.openUploads,
+                          onPressed: widget.onOpenUploads,
                         ),
                       ],
                     ),
