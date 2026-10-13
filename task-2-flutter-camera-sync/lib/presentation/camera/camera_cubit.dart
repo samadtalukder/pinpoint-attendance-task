@@ -22,12 +22,15 @@ class CameraCubit extends Cubit<CameraState> {
   int _focusCounter = 0;
   bool _released = false;
 
-  Future<void> initialize() async {
+  /// [promptForPermission] is false for lifecycle restarts: the system
+  /// permission dialog itself pauses and resumes the app, so prompting from a
+  /// resume would loop.
+  Future<void> initialize({bool promptForPermission = true}) async {
     _released = false;
     emit(state.copyWith(status: CameraStatus.initializing));
 
     var permission = await _permission.status();
-    if (permission == CameraPermission.denied) {
+    if (promptForPermission && permission == CameraPermission.denied) {
       permission = await _permission.request();
     }
     if (isClosed) return;
@@ -177,7 +180,7 @@ class CameraCubit extends Cubit<CameraState> {
           CameraStatus.error => true,
           _ => false,
         };
-    if (retryable) await initialize();
+    if (retryable) await initialize(promptForPermission: false);
   }
 
   Future<void> openSettings() => _permission.openSettings();

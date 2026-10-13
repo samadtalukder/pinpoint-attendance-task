@@ -292,6 +292,24 @@ void main() {
       },
     );
 
+    test('resume while denied does not prompt again '
+        '(the system dialog itself triggers a resume)', () async {
+      when(() => permission.status())
+          .thenAnswer((_) async => CameraPermission.denied);
+      when(() => permission.request())
+          .thenAnswer((_) async => CameraPermission.permanentlyDenied);
+      final cubit = build();
+      addTearDown(cubit.close);
+      await cubit.initialize();
+      verify(() => permission.request()).called(1);
+
+      await cubit.onAppResumed();
+      await cubit.onAppResumed();
+
+      verifyNever(() => permission.request());
+      expect(cubit.state.status, CameraStatus.permissionDenied);
+    });
+
     test('close releases the camera', () async {
       final cubit = await ready();
 
