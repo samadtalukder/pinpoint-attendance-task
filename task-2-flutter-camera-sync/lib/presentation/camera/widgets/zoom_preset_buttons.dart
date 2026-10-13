@@ -24,18 +24,34 @@ class ZoomPresetButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    bool isActive(double preset) =>
+        (zoom - preset).abs() < ZoomConstants.activeTolerance;
+    return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final preset in presets)
+        // Between presets nothing is highlighted, so the value is spelled out.
+        if (!presets.any(isActive))
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: _PresetButton(
-              label: labelFor(preset),
-              active: (zoom - preset).abs() < ZoomConstants.activeTolerance,
-              onPressed: () => onSelected(preset),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              AppStrings.zoomValue(zoom.toStringAsFixed(1)),
+              style: Theme.of(context).textTheme.labelLarge,
             ),
           ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final preset in presets)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: _PresetButton(
+                  label: labelFor(preset),
+                  active: isActive(preset),
+                  onPressed: () => onSelected(preset),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -54,14 +70,13 @@ class _PresetButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
       selected: active,
       label: AppStrings.zoomPreset(label),
       excludeSemantics: true,
       child: Material(
-        color: active ? scheme.primary : Colors.black54,
+        color: active ? Colors.white : Colors.black54,
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -73,7 +88,7 @@ class _PresetButton extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: active ? scheme.onPrimary : Colors.white,
+                  color: active ? Colors.black : Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),

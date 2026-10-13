@@ -153,6 +153,16 @@ class CameraPluginService implements CameraService, CameraPreviewSource {
   }
 
   @override
+  double get aspectRatio {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) {
+      return ZoomConstants.fallbackPreviewAspect;
+    }
+    final landscape = controller.value.aspectRatio;
+    return landscape > 1 ? 1 / landscape : landscape;
+  }
+
+  @override
   Widget buildPreview() {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {

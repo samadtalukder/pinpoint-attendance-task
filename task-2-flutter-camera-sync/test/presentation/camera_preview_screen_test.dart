@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pinpoint_capture/core/camera_preview_source.dart';
 import 'package:pinpoint_capture/core/strings.dart';
+import 'package:pinpoint_capture/core/theme.dart';
 import 'package:pinpoint_capture/domain/entities/capture_batch.dart';
 import 'package:pinpoint_capture/domain/entities/captured_image.dart';
 import 'package:pinpoint_capture/domain/entities/zoom_capabilities.dart';
@@ -13,6 +14,7 @@ import 'package:pinpoint_capture/domain/usecases/enqueue_batch_use_case.dart';
 import 'package:pinpoint_capture/presentation/camera/camera_cubit.dart';
 import 'package:pinpoint_capture/presentation/camera/camera_preview_screen.dart';
 import 'package:pinpoint_capture/presentation/camera/widgets/focus_indicator.dart';
+import 'package:pinpoint_capture/presentation/camera/widgets/zoom_preset_buttons.dart';
 
 class MockCamera extends Mock implements CameraService {}
 
@@ -21,6 +23,9 @@ class MockPermission extends Mock implements CameraPermissionService {}
 class MockEnqueue extends Mock implements EnqueueBatchUseCase {}
 
 class FakePreview implements CameraPreviewSource {
+  @override
+  double get aspectRatio => 9 / 16;
+
   @override
   Widget buildPreview() => const SizedBox.expand(
     key: Key('preview'),
@@ -35,6 +40,9 @@ void main() {
   late MockPermission permission;
   late MockEnqueue enqueue;
   var capabilities = const ZoomCapabilities(min: 0.5, max: 8);
+  var uploadsOpened = 0;
+  var closed = 0;
+  var optionsOpened = 0;
 
   setUpAll(() {
     registerFallbackValue(<CapturedImage>[]);
@@ -43,6 +51,9 @@ void main() {
 
   setUp(() {
     capabilities = const ZoomCapabilities(min: 0.5, max: 8);
+    uploadsOpened = 0;
+    closed = 0;
+    optionsOpened = 0;
     camera = MockCamera();
     permission = MockPermission();
     enqueue = MockEnqueue();
@@ -59,6 +70,12 @@ void main() {
     when(() => camera.canFlip).thenReturn(true);
   });
 
+  /// Preset button label; the slider pill repeats the range ends.
+  Finder preset(String label) => find.descendant(
+    of: find.byType(ZoomPresetButtons),
+    matching: find.text(label),
+  );
+
   Future<CameraCubit> pumpScreen(WidgetTester tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -68,11 +85,14 @@ void main() {
     addTearDown(cubit.close);
     await tester.pumpWidget(
       MaterialApp(
+        theme: AppTheme.dark(),
         home: BlocProvider.value(
           value: cubit,
           child: CameraPreviewScreen(
             previewSource: FakePreview(),
-            onOpenUploads: () {},
+            onOpenUploads: () => uploadsOpened++,
+            onClose: () => closed++,
+            onOpenOptions: () => optionsOpened++,
           ),
         ),
       ),
@@ -87,9 +107,9 @@ void main() {
   ) async {
     await pumpScreen(tester);
 
-    expect(find.text('0.5x'), findsOneWidget);
-    expect(find.text('1x'), findsOneWidget);
-    expect(find.text('2x'), findsOneWidget);
+    expect(preset('0.5x'), findsOneWidget);
+    expect(preset('1x'), findsOneWidget);
+    expect(preset('2x'), findsOneWidget);
     expect(find.byType(Slider), findsOneWidget);
   });
 
@@ -98,15 +118,15 @@ void main() {
 
     await pumpScreen(tester);
 
-    expect(find.text('0.5x'), findsNothing);
-    expect(find.text('1x'), findsOneWidget);
-    expect(find.text('2x'), findsOneWidget);
+    expect(preset('0.5x'), findsNothing);
+    expect(preset('1x'), findsOneWidget);
+    expect(preset('2x'), findsOneWidget);
   });
 
   testWidgets('tapping a preset zooms the camera', (tester) async {
     final cubit = await pumpScreen(tester);
 
-    await tester.tap(find.text('2x'));
+    await tester.tap(preset('2x'));
     await tester.pump();
 
     verify(() => camera.setZoom(2)).called(1);
@@ -167,7 +187,10 @@ void main() {
 
   testWidgets('shutter adds to the batch and enables upload', (tester) async {
     await pumpScreen(tester);
-    expect(find.text(AppStrings.uploadBatchEmpty), findsOneWidget);
+    expect(
+      find.text(AppStrings.uploadBatchEmpty.toUpperCase()),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('shutter')));
     await tester.pump();
@@ -175,10 +198,12 @@ void main() {
     await tester.pump();
 
     expect(find.text('2'), findsOneWidget);
-    expect(find.text(AppStrings.uploadBatch(2)), findsOneWidget);
+    expect(find.text(AppStrings.uploadBatch(2).toUpperCase()), findsOneWidget);
   });
 
-  testWidgets('upload batch queues the photos and confirms', (tester) async {
+  testWidgets('upload batch queues the photos and opens the manager', (
+    tester,
+  ) async {
     final cubit = await pumpScreen(tester);
     when(
       () => enqueue(any()),
@@ -186,14 +211,75 @@ void main() {
     await tester.tap(find.byKey(const Key('shutter')));
     await tester.pump();
 
-    await tester.tap(find.text(AppStrings.uploadBatch(1)));
+    await tester.tap(find.text(AppStrings.uploadBatch(1).toUpperCase()));
     await tester.pump();
     await tester.pump();
 
     verify(() => enqueue([photo])).called(1);
     expect(cubit.state.batch, isEmpty);
-    expect(find.text(AppStrings.batchQueued(1)), findsOneWidget);
-    expect(find.text(AppStrings.uploadBatchEmpty), findsOneWidget);
+    expect(uploadsOpened, 1);
+    expect(
+      find.text(AppStrings.uploadBatchEmpty.toUpperCase()),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('thumbnail opens the upload manager', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byKey(const Key('batch_thumbnail')));
+
+    expect(uploadsOpened, 1);
+  });
+
+  testWidgets('close and options buttons call back', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(AppStrings.closeCamera));
+    await tester.tap(find.byTooltip(AppStrings.cameraOptions));
+
+    expect(closed, 1);
+    expect(optionsOpened, 1);
+  });
+
+  testWidgets('flash button toggles the flash', (tester) async {
+    final cubit = await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(AppStrings.flashOff));
+    await tester.pump();
+
+    verify(() => camera.setFlash(true)).called(1);
+    expect(cubit.state.flashOn, isTrue);
+    expect(find.byTooltip(AppStrings.flashOn), findsOneWidget);
+  });
+
+  testWidgets('flip button switches lens and hides flash on the front', (
+    tester,
+  ) async {
+    final cubit = await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(AppStrings.flipCamera));
+    await tester.pump();
+    await tester.pump();
+
+    verify(() => camera.initialize(lens: CameraLens.front)).called(1);
+    expect(cubit.state.lens, CameraLens.front);
+    expect(find.byTooltip(AppStrings.flashOff), findsNothing);
+    expect(find.byTooltip(AppStrings.flipCamera), findsOneWidget);
+  });
+
+  testWidgets('no flip button on a single-camera device', (tester) async {
+    when(() => camera.canFlip).thenReturn(false);
+
+    await pumpScreen(tester);
+
+    expect(find.byTooltip(AppStrings.flipCamera), findsNothing);
+  });
+
+  testWidgets('zoom pill labels the range', (tester) async {
+    await pumpScreen(tester);
+
+    expect(find.text('8x'), findsOneWidget);
   });
 
   testWidgets('queue failure keeps the photos and says so', (tester) async {
@@ -202,12 +288,12 @@ void main() {
     await tester.tap(find.byKey(const Key('shutter')));
     await tester.pump();
 
-    await tester.tap(find.text(AppStrings.uploadBatch(1)));
+    await tester.tap(find.text(AppStrings.uploadBatch(1).toUpperCase()));
     await tester.pump();
     await tester.pump();
 
     expect(find.text(AppStrings.queueFailed), findsOneWidget);
-    expect(find.text(AppStrings.uploadBatch(1)), findsOneWidget);
+    expect(find.text(AppStrings.uploadBatch(1).toUpperCase()), findsOneWidget);
   });
 
   testWidgets('denied permission offers to ask again', (tester) async {
@@ -226,7 +312,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('1x'), findsOneWidget);
+    expect(preset('1x'), findsOneWidget);
   });
 
   testWidgets('permanently denied permission offers Open settings', (
@@ -261,7 +347,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('1x'), findsOneWidget);
+    expect(preset('1x'), findsOneWidget);
   });
 
   testWidgets('backgrounding releases the camera and resuming restarts it', (

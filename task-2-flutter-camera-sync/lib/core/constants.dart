@@ -41,6 +41,10 @@ abstract final class ZoomConstants {
 
   /// A preset counts as active when the zoom is this close to it.
   static const double activeTolerance = 0.05;
+
+  /// Preview shape (portrait width / height) used until the camera reports
+  /// its own.
+  static const double fallbackPreviewAspect = 3 / 4;
 }
 
 abstract final class StorageConstants {

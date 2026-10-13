@@ -52,6 +52,9 @@ class FakeCameraService implements CameraService, CameraPreviewSource {
   Future<void> dispose() async {}
 
   @override
+  double get aspectRatio => 9 / 16;
+
+  @override
   Widget buildPreview() => const SizedBox.expand(
     child: ColoredBox(color: Colors.blueGrey, child: Text('fake preview')),
   );

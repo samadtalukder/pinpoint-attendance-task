@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/strings.dart';
 import '../core/theme.dart';
 import '../presentation/camera/camera_cubit.dart';
 import '../presentation/camera/camera_preview_screen.dart';
+import '../presentation/settings/mock_mode_cubit.dart';
+import '../presentation/settings/mock_mode_sheet.dart';
 import '../presentation/upload_manager/upload_manager_screen.dart';
 import '../presentation/upload_manager/upload_queue_cubit.dart';
 import 'di.dart';
@@ -29,10 +32,17 @@ class PinpointApp extends StatelessWidget {
           builder: (context) => CameraPreviewScreen(
             previewSource: dependencies.cameraPreview,
             onOpenUploads: () => _openUploads(context),
+            onClose: SystemNavigator.pop,
+            onOpenOptions: () => _openOptions(context),
           ),
         ),
       ),
     );
+  }
+
+  void _openOptions(BuildContext context) {
+    final cubit = MockModeCubit(dependencies.modeStore)..load();
+    MockModeSheet.show(context, cubit).whenComplete(cubit.close);
   }
 
   void _openUploads(BuildContext context) {
@@ -43,7 +53,6 @@ class PinpointApp extends StatelessWidget {
             queue: dependencies.queue,
             connectivity: dependencies.connectivity,
             scheduler: dependencies.scheduler,
-            modeStore: dependencies.modeStore,
             pauseStore: dependencies.pauseStore,
             changeBus: dependencies.changeBus,
             imageStore: dependencies.imageStore,

@@ -7,6 +7,11 @@ abstract final class AppStrings {
   static const String cameraStarting = 'Starting camera…';
   static const String takePhoto = 'Take photo';
   static const String openUploads = 'Open upload manager';
+  static const String closeCamera = 'Close camera';
+  static const String cameraOptions = 'Camera options';
+  static const String flashOn = 'Flash on';
+  static const String flashOff = 'Flash off';
+  static const String flipCamera = 'Switch camera';
   static const String uploadsTitle = 'Upload Manager';
   static const String zoomSlider = 'Zoom';
   static const String focusHint = 'Tap the preview to focus';

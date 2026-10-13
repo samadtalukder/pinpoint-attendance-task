@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/strings.dart';
 import '../../core/theme.dart';
-import '../../domain/services/mock_upload_mode_store.dart';
 import 'upload_queue_cubit.dart';
 import 'upload_queue_state.dart';
 import 'widgets/connection_chip.dart';
@@ -42,40 +41,11 @@ class UploadManagerScreen extends StatelessWidget {
               PopupMenuButton<_MenuAction>(
                 tooltip: AppStrings.moreOptions,
                 onSelected: (action) => switch (action) {
-                  _MenuAction.mockSuccess => cubit.setMockMode(
-                    MockUploadMode.success,
-                  ),
-                  _MenuAction.mockFailure => cubit.setMockMode(
-                    MockUploadMode.failure,
-                  ),
-                  _MenuAction.mockSlow => cubit.setMockMode(
-                    MockUploadMode.slow,
-                  ),
                   _MenuAction.retryNow => cubit.retryNow(),
                   _MenuAction.addSample => cubit.addSampleBatch(),
                   _MenuAction.clearSynced => cubit.clearSynced(),
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    enabled: false,
-                    child: Text(AppStrings.menuMockMode),
-                  ),
-                  _modeItem(
-                    _MenuAction.mockSuccess,
-                    AppStrings.mockSuccess,
-                    state.mode == MockUploadMode.success,
-                  ),
-                  _modeItem(
-                    _MenuAction.mockFailure,
-                    AppStrings.mockFailure,
-                    state.mode == MockUploadMode.failure,
-                  ),
-                  _modeItem(
-                    _MenuAction.mockSlow,
-                    AppStrings.mockSlow,
-                    state.mode == MockUploadMode.slow,
-                  ),
-                  const PopupMenuDivider(),
                   PopupMenuItem(
                     value: _MenuAction.retryNow,
                     enabled: state.pendingCount > 0 && !state.isUploading,
@@ -110,26 +80,6 @@ class UploadManagerScreen extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<_MenuAction> _modeItem(
-    _MenuAction action,
-    String label,
-    bool selected,
-  ) {
-    return PopupMenuItem(
-      value: action,
-      child: Row(
-        children: [
-          Icon(
-            selected ? Icons.radio_button_checked : Icons.radio_button_off,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Flexible(child: Text(label)),
-        ],
-      ),
-    );
-  }
-
   void _showFeedback(BuildContext context, UploadQueueState state) {
     final message = switch (state.feedback) {
       UploadQueueFeedback.retrying => AppStrings.feedbackRetrying,
@@ -147,14 +97,7 @@ class UploadManagerScreen extends StatelessWidget {
   }
 }
 
-enum _MenuAction {
-  mockSuccess,
-  mockFailure,
-  mockSlow,
-  retryNow,
-  addSample,
-  clearSynced,
-}
+enum _MenuAction { retryNow, addSample, clearSynced }
 
 class _Body extends StatelessWidget {
   const _Body({required this.state});

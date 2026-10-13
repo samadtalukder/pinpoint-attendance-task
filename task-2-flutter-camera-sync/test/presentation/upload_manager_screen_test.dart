@@ -11,7 +11,6 @@ import 'package:pinpoint_capture/domain/entities/upload_status.dart';
 import 'package:pinpoint_capture/domain/repositories/upload_queue_repository.dart';
 import 'package:pinpoint_capture/domain/services/connectivity_service.dart';
 import 'package:pinpoint_capture/domain/services/image_store.dart';
-import 'package:pinpoint_capture/domain/services/mock_upload_mode_store.dart';
 import 'package:pinpoint_capture/domain/services/queue_change_bus.dart';
 import 'package:pinpoint_capture/domain/services/sync_pause_store.dart';
 import 'package:pinpoint_capture/domain/services/sync_scheduler.dart';
@@ -23,8 +22,6 @@ class MockQueue extends Mock implements UploadQueueRepository {}
 class MockConnectivity extends Mock implements ConnectivityService {}
 
 class MockScheduler extends Mock implements SyncScheduler {}
-
-class MockModeStore extends Mock implements MockUploadModeStore {}
 
 class MockPauseStore extends Mock implements SyncPauseStore {}
 
@@ -54,15 +51,12 @@ void main() {
   late MockQueue queue;
   late MockConnectivity connectivity;
   late MockScheduler scheduler;
-  late MockModeStore modeStore;
   late MockPauseStore pauseStore;
   late MockBus bus;
   late MockImageStore imageStore;
   var rows = <PendingUpload>[];
   var isOnline = true;
   var startNewBatchTaps = 0;
-
-  setUpAll(() => registerFallbackValue(MockUploadMode.success));
 
   setUp(() {
     rows = [];
@@ -71,7 +65,6 @@ void main() {
     queue = MockQueue();
     connectivity = MockConnectivity();
     scheduler = MockScheduler();
-    modeStore = MockModeStore();
     pauseStore = MockPauseStore();
     bus = MockBus();
     imageStore = MockImageStore();
@@ -81,9 +74,6 @@ void main() {
     when(() => connectivity.onlineChanges)
         .thenAnswer((_) => const Stream<bool>.empty());
     when(() => bus.changes).thenAnswer((_) => const Stream<void>.empty());
-    when(() => modeStore.read())
-        .thenAnswer((_) async => MockUploadMode.success);
-    when(() => modeStore.write(any())).thenAnswer((_) async {});
     when(() => pauseStore.isPaused()).thenAnswer((_) async => false);
     when(() => pauseStore.write(any())).thenAnswer((_) async {});
     when(() => scheduler.requestSync(immediate: any(named: 'immediate')))
@@ -100,7 +90,6 @@ void main() {
       queue: queue,
       connectivity: connectivity,
       scheduler: scheduler,
-      modeStore: modeStore,
       pauseStore: pauseStore,
       changeBus: bus,
       imageStore: imageStore,
@@ -238,17 +227,6 @@ void main() {
 
     verify(() => scheduler.requestSync(immediate: true)).called(1);
     expect(find.text(AppStrings.feedbackRetrying), findsOneWidget);
-  });
-
-  testWidgets('menu switches the mock upload result', (tester) async {
-    await pumpScreen(tester);
-
-    await tester.tap(find.byTooltip(AppStrings.moreOptions));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(AppStrings.mockFailure));
-    await tester.pumpAndSettle();
-
-    verify(() => modeStore.write(MockUploadMode.failure)).called(1);
   });
 
   testWidgets('menu clears synced uploads', (tester) async {

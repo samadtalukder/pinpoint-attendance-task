@@ -7,7 +7,6 @@ import '../../domain/entities/new_upload.dart';
 import '../../domain/repositories/upload_queue_repository.dart';
 import '../../domain/services/connectivity_service.dart';
 import '../../domain/services/image_store.dart';
-import '../../domain/services/mock_upload_mode_store.dart';
 import '../../domain/services/queue_change_bus.dart';
 import '../../domain/services/sync_pause_store.dart';
 import '../../domain/services/sync_scheduler.dart';
@@ -18,7 +17,6 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
     required this._queue,
     required this._connectivity,
     required this._scheduler,
-    required this._modeStore,
     required this._pauseStore,
     required this._changeBus,
     required this._imageStore,
@@ -27,7 +25,6 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
   final UploadQueueRepository _queue;
   final ConnectivityService _connectivity;
   final SyncScheduler _scheduler;
-  final MockUploadModeStore _modeStore;
   final SyncPauseStore _pauseStore;
   final QueueChangeBus _changeBus;
   final ImageStore _imageStore;
@@ -41,7 +38,6 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
       if (!isClosed) emit(state.copyWith(isOnline: online));
     });
     final online = await _connectivity.isOnline();
-    final mode = await _modeStore.read();
     final paused = await _pauseStore.isPaused();
     final items = await _queue.getAll();
     if (isClosed) return;
@@ -50,7 +46,6 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
         isLoading: false,
         items: items,
         isOnline: online,
-        mode: mode,
         isPaused: paused,
       ),
     );
@@ -78,11 +73,6 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
     if (!isClosed) emit(state.copyWith(isPaused: false));
     await _scheduler.requestSync(immediate: true);
   }, UploadQueueFeedback.none);
-
-  Future<void> setMockMode(MockUploadMode mode) async {
-    await _modeStore.write(mode);
-    if (!isClosed) emit(state.copyWith(mode: mode));
-  }
 
   Future<void> clearSynced() => _run(() async {
     final paths = await _queue.clearSynced();
