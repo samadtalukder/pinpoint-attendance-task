@@ -45,6 +45,16 @@ abstract final class ZoomConstants {
   /// Preview shape (portrait width / height) used until the camera reports
   /// its own.
   static const double fallbackPreviewAspect = 3 / 4;
+
+  /// A back lens counts as ultrawide when its 35mm-equivalent focal length is
+  /// at most this share of the main camera's (typically 13mm vs 26mm).
+  static const double ultraWideFocalRatio = 0.7;
+}
+
+/// Channel to the native side that reads camera focal lengths.
+abstract final class LensInfoConstants {
+  static const String channelName = 'pinpoint_capture/lens_info';
+  static const String method = 'equivalentFocalLengths';
 }
 
 abstract final class StorageConstants {

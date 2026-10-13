@@ -9,6 +9,8 @@ import '../../core/constants.dart';
 import '../../domain/entities/captured_image.dart';
 import '../../domain/entities/zoom_capabilities.dart';
 import '../../domain/services/camera_service.dart';
+import 'lens_info_source.dart';
+import 'ultrawide_detection.dart';
 
 /// Adapter over the `camera` plugin.
 ///
@@ -17,6 +19,10 @@ import '../../domain/services/camera_service.dart';
 /// (handled by switching lens). Below 1x on a separate lens the zoom snaps
 /// to 0.5x.
 class CameraPluginService implements CameraService, CameraPreviewSource {
+  CameraPluginService({LensInfoSource? lensInfo})
+    : _lensInfo = lensInfo ?? MethodChannelLensInfoSource();
+
+  final LensInfoSource _lensInfo;
   CameraController? _controller;
   CameraDescription? _main;
   CameraDescription? _ultraWide;
@@ -50,11 +56,11 @@ class CameraPluginService implements CameraService, CameraPreviewSource {
         orElse: () => list.first,
       );
       _ultraWide = lens == CameraLens.back
-          ? list
-                .where(
-                  (c) => c.lensType == CameraLensType.ultraWide && c != _main,
-                )
-                .firstOrNull
+          ? findUltraWide(
+              back: list,
+              main: _main!,
+              equivalentMm: await _lensInfo.equivalentFocalLengths(),
+            )
           : null;
 
       final controller = CameraController(
