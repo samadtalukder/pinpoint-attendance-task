@@ -4,20 +4,27 @@ import 'package:flutter/material.dart';
 
 import '../../../core/strings.dart';
 import '../../../domain/entities/captured_image.dart';
+import 'camera_icon_button.dart';
 
-/// Thumbnail of the current batch, shutter button and a spacer so the
-/// shutter stays centered.
+/// Thumbnail of the current batch (opens the upload manager), shutter button
+/// and the flip button. The shutter stays centered without a flip button.
 class CaptureBar extends StatelessWidget {
   const CaptureBar({
     super.key,
     required this.batch,
     required this.canCapture,
     required this.onCapture,
+    required this.onOpenUploads,
+    required this.onFlip,
   });
 
   final List<CapturedImage> batch;
   final bool canCapture;
   final VoidCallback onCapture;
+  final VoidCallback onOpenUploads;
+
+  /// Null hides the flip button (device has a single camera).
+  final VoidCallback? onFlip;
 
   static const double _shutterSize = 76;
   static const double _thumbSize = 56;
@@ -27,7 +34,7 @@ class CaptureBar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _BatchThumbnail(batch: batch),
+        _BatchThumbnail(batch: batch, onTap: onOpenUploads),
         Semantics(
           button: true,
           enabled: canCapture,
@@ -59,16 +66,28 @@ class CaptureBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: _thumbSize),
+        onFlip == null
+            ? const SizedBox(width: _thumbSize)
+            : SizedBox(
+                width: _thumbSize,
+                child: Center(
+                  child: CameraIconButton(
+                    icon: Icons.flip_camera_android_outlined,
+                    label: AppStrings.flipCamera,
+                    onPressed: onFlip,
+                  ),
+                ),
+              ),
       ],
     );
   }
 }
 
 class _BatchThumbnail extends StatelessWidget {
-  const _BatchThumbnail({required this.batch});
+  const _BatchThumbnail({required this.batch, required this.onTap});
 
   final List<CapturedImage> batch;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -76,65 +95,71 @@ class _BatchThumbnail extends StatelessWidget {
     final last = batch.isEmpty ? null : batch.last;
     const size = CaptureBar._thumbSize;
     return Semantics(
+      button: true,
+      onTapHint: AppStrings.openUploads,
       label: batch.isEmpty
           ? AppStrings.batchEmptyLabel
           : AppStrings.batchPhotoCount(batch.length),
       excludeSemantics: true,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: size,
-                height: size,
-                child: last == null
-                    ? const ColoredBox(
-                        color: Colors.white12,
-                        child: Icon(
-                          Icons.photo_library_outlined,
-                          color: Colors.white70,
-                        ),
-                      )
-                    : Image.file(
-                        File(last.path),
-                        fit: BoxFit.cover,
-                        cacheWidth: 160,
-                        errorBuilder: (_, _, _) => const ColoredBox(
+      child: GestureDetector(
+        key: const Key('batch_thumbnail'),
+        onTap: onTap,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: size,
+                  height: size,
+                  child: last == null
+                      ? const ColoredBox(
                           color: Colors.white12,
-                          child: Icon(Icons.image, color: Colors.white70),
+                          child: Icon(
+                            Icons.photo_library_outlined,
+                            color: Colors.white70,
+                          ),
+                        )
+                      : Image.file(
+                          File(last.path),
+                          fit: BoxFit.cover,
+                          cacheWidth: 160,
+                          errorBuilder: (_, _, _) => const ColoredBox(
+                            color: Colors.white12,
+                            child: Icon(Icons.image, color: Colors.white70),
+                          ),
                         ),
-                      ),
+                ),
               ),
-            ),
-            if (batch.isNotEmpty)
-              Positioned(
-                top: -6,
-                right: -6,
-                child: Container(
-                  key: const Key('batch_badge'),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.primary,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${batch.length}',
-                    style: TextStyle(
-                      color: scheme.onPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+              if (batch.isNotEmpty)
+                Positioned(
+                  top: -6,
+                  right: -6,
+                  child: Container(
+                    key: const Key('batch_badge'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${batch.length}',
+                      style: TextStyle(
+                        color: scheme.onPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

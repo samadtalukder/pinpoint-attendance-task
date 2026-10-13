@@ -26,7 +26,10 @@ void main() {
   late MockPermission permission;
   late MockEnqueue enqueue;
 
-  setUpAll(() => registerFallbackValue(<CapturedImage>[]));
+  setUpAll(() {
+    registerFallbackValue(<CapturedImage>[]);
+    registerFallbackValue(CameraLens.back);
+  });
 
   setUp(() {
     camera = MockCamera();
@@ -34,11 +37,14 @@ void main() {
     enqueue = MockEnqueue();
     when(() => permission.status())
         .thenAnswer((_) async => CameraPermission.granted);
-    when(() => camera.initialize()).thenAnswer((_) async => caps);
+    when(() => camera.initialize(lens: any(named: 'lens')))
+        .thenAnswer((_) async => caps);
     when(() => camera.setZoom(any())).thenAnswer((_) async {});
     when(() => camera.focusAt(any(), any())).thenAnswer((_) async {});
     when(() => camera.capture()).thenAnswer((_) async => photo);
     when(() => camera.dispose()).thenAnswer((_) async {});
+    when(() => camera.setFlash(any())).thenAnswer((_) async {});
+    when(() => camera.canFlip).thenReturn(true);
     when(() => permission.openSettings()).thenAnswer((_) async {});
   });
 
@@ -58,7 +64,11 @@ void main() {
       act: (c) => c.initialize(),
       expect: () => [
         const CameraState(),
-        const CameraState(status: CameraStatus.ready, capabilities: caps),
+        const CameraState(
+          status: CameraStatus.ready,
+          capabilities: caps,
+          canFlip: true,
+        ),
       ],
     );
 
@@ -75,7 +85,19 @@ void main() {
       verify: (c) {
         expect(c.state.status, CameraStatus.permissionDenied);
         verify(() => permission.request()).called(1);
-        verifyNever(() => camera.initialize());
+        verifyNever(() => camera.initialize(lens: any(named: 'lens')));
+      },
+    );
+
+    blocTest<CameraCubit, CameraState>(
+      'denied permission shows the explanation without prompting when asked not to',
+      setUp: () => when(() => permission.status())
+          .thenAnswer((_) async => CameraPermission.denied),
+      build: build,
+      act: (c) => c.initialize(promptForPermission: false),
+      verify: (c) {
+        expect(c.state.status, CameraStatus.permissionDenied);
+        verifyNever(() => permission.request());
       },
     );
 
@@ -95,7 +117,7 @@ void main() {
     blocTest<CameraCubit, CameraState>(
       'no back camera is reported',
       setUp: () =>
-          when(() => camera.initialize())
+          when(() => camera.initialize(lens: any(named: 'lens')))
               .thenThrow(const CameraFailure(CameraFailureType.noCamera)),
       build: build,
       act: (c) => c.initialize(),
@@ -105,7 +127,7 @@ void main() {
     blocTest<CameraCubit, CameraState>(
       'camera error is reported, not thrown',
       setUp: () =>
-          when(() => camera.initialize())
+          when(() => camera.initialize(lens: any(named: 'lens')))
               .thenThrow(const CameraFailure(CameraFailureType.unavailable)),
       build: build,
       act: (c) => c.initialize(),
@@ -182,6 +204,28 @@ void main() {
     });
   });
 
+  test('a camera released while it was starting is not left open', () async {
+    final gate = Completer<ZoomCapabilities>();
+    when(() => camera.initialize(lens: any(named: 'lens')))
+        .thenAnswer((_) => gate.future);
+    final cubit = build();
+    addTearDown(cubit.close);
+
+    final starting = cubit.initialize();
+    await Future<void>.delayed(Duration.zero);
+    await cubit.onAppPaused();
+    gate.complete(caps);
+    await starting;
+
+    verify(() => camera.dispose()).called(1);
+    expect(cubit.state.status, CameraStatus.initializing);
+
+    when(() => camera.initialize(lens: any(named: 'lens')))
+        .thenAnswer((_) async => caps);
+    await cubit.onAppResumed();
+    expect(cubit.state.status, CameraStatus.ready);
+  });
+
   group('capture and queue', () {
     test('capture adds photos to the current batch', () async {
       final cubit = await ready();
@@ -204,6 +248,16 @@ void main() {
       expect(cubit.state.batch, [photo]);
       expect(cubit.state.feedback, CameraFeedback.captureFailed);
       expect(cubit.state.isCapturing, isFalse);
+    });
+
+    test('an unexpected capture error releases the shutter', () async {
+      final cubit = await ready();
+      when(() => camera.capture()).thenThrow(StateError('file system'));
+
+      await cubit.capture();
+
+      expect(cubit.state.isCapturing, isFalse);
+      expect(cubit.state.feedback, CameraFeedback.captureFailed);
     });
 
     test('queueBatch enqueues the photos and starts a fresh batch', () async {
@@ -254,6 +308,105 @@ void main() {
     });
   });
 
+  group('flash and flip', () {
+    test('flash toggles and is sent to the camera', () async {
+      final cubit = await ready();
+
+      await cubit.toggleFlash();
+      expect(cubit.state.flashOn, isTrue);
+      verify(() => camera.setFlash(true)).called(1);
+
+      await cubit.toggleFlash();
+      expect(cubit.state.flashOn, isFalse);
+      verify(() => camera.setFlash(false)).called(1);
+    });
+
+    test('flash choice is re-applied when the camera restarts', () async {
+      final cubit = await ready();
+      await cubit.toggleFlash();
+      clearInteractions(camera);
+
+      await cubit.onAppPaused();
+      await cubit.onAppResumed();
+
+      verify(() => camera.setFlash(true)).called(1);
+    });
+
+    test('canFlip comes from the camera', () async {
+      when(() => camera.canFlip).thenReturn(false);
+
+      final cubit = await ready();
+
+      expect(cubit.state.canFlip, isFalse);
+    });
+
+    test('flip switches to the front lens and resets zoom', () async {
+      final cubit = await ready();
+      await cubit.setZoom(4);
+
+      await cubit.flipCamera();
+
+      verify(() => camera.initialize(lens: CameraLens.front)).called(1);
+      expect(cubit.state.lens, CameraLens.front);
+      expect(cubit.state.status, CameraStatus.ready);
+      expect(cubit.state.zoom, 1.0);
+    });
+
+    test('flip twice returns to the back lens', () async {
+      final cubit = await ready();
+
+      await cubit.flipCamera();
+      await cubit.flipCamera();
+
+      expect(cubit.state.lens, CameraLens.back);
+    });
+
+    test('flash is not applied on the front lens', () async {
+      final cubit = await ready();
+      await cubit.toggleFlash();
+      clearInteractions(camera);
+
+      await cubit.flipCamera();
+
+      verifyNever(() => camera.setFlash(true));
+      expect(cubit.state.flashOn, isTrue, reason: 'choice is remembered');
+    });
+
+    test('a failing flip falls back to the previous lens', () async {
+      final cubit = await ready();
+      when(() => camera.initialize(lens: CameraLens.front))
+          .thenThrow(const CameraFailure(CameraFailureType.noCamera));
+
+      await cubit.flipCamera();
+
+      expect(cubit.state.lens, CameraLens.back);
+      expect(cubit.state.status, CameraStatus.ready);
+      expect(cubit.state.feedback, CameraFeedback.flipFailed);
+    });
+
+    test('flip does nothing when the device cannot flip', () async {
+      when(() => camera.canFlip).thenReturn(false);
+      final cubit = await ready();
+      clearInteractions(camera);
+
+      await cubit.flipCamera();
+
+      verifyNever(() => camera.initialize(lens: any(named: 'lens')));
+      expect(cubit.state.lens, CameraLens.back);
+    });
+
+    test('resume restarts on the lens in use', () async {
+      final cubit = await ready();
+      await cubit.flipCamera();
+      clearInteractions(camera);
+
+      await cubit.onAppPaused();
+      await cubit.onAppResumed();
+
+      verify(() => camera.initialize(lens: CameraLens.front)).called(1);
+    });
+  });
+
   group('lifecycle', () {
     test('pause releases the camera and resume restarts it', () async {
       final cubit = await ready();
@@ -262,7 +415,7 @@ void main() {
       verify(() => camera.dispose()).called(1);
 
       await cubit.onAppResumed();
-      verify(() => camera.initialize()).called(2);
+      verify(() => camera.initialize(lens: any(named: 'lens'))).called(2);
       expect(cubit.state.status, CameraStatus.ready);
     });
 
@@ -271,7 +424,7 @@ void main() {
 
       await cubit.onAppResumed();
 
-      verify(() => camera.initialize()).called(1);
+      verify(() => camera.initialize(lens: any(named: 'lens'))).called(1);
     });
 
     test(
@@ -291,6 +444,26 @@ void main() {
         expect(cubit.state.status, CameraStatus.ready);
       },
     );
+
+    test('resume while denied does not prompt again '
+        '(the system dialog itself triggers a resume)', () async {
+      when(() => permission.status())
+          .thenAnswer((_) async => CameraPermission.denied);
+      when(() => permission.request())
+          .thenAnswer((_) async => CameraPermission.permanentlyDenied);
+      final cubit = build();
+      addTearDown(cubit.close);
+      await cubit.initialize();
+      verify(() => permission.request()).called(1);
+
+      await cubit.onAppResumed();
+      await cubit.onAppResumed();
+
+      // status() cannot tell "denied" from "blocked" on Android, so resume
+      // must not overwrite what request() reported.
+      verifyNever(() => permission.request());
+      expect(cubit.state.status, CameraStatus.permissionPermanentlyDenied);
+    });
 
     test('close releases the camera', () async {
       final cubit = await ready();

@@ -15,12 +15,17 @@ abstract final class SyncConstants {
   /// Worker backoff: workmanager doubles the delay after each failed run.
   static const Duration initialBackoff = Duration(seconds: 10);
 
+  /// A run gives up after this many failures in a row (dead connection), but
+  /// keeps going past a single bad image so it cannot block the rest.
+  static const int maxConsecutiveFailures = 3;
+
   static const Duration mockLatency = Duration(milliseconds: 800);
 
   /// Longer than [uploadTimeout], so "slow" mode always times out.
   static const Duration mockSlowLatency = Duration(seconds: 30);
 
   static const String modePreferenceKey = 'mock_upload_mode';
+  static const String pausePreferenceKey = 'sync_paused';
 
   /// Unique work name: only one sync job exists at a time, so there is a
   /// single uploader.
@@ -40,6 +45,20 @@ abstract final class ZoomConstants {
 
   /// A preset counts as active when the zoom is this close to it.
   static const double activeTolerance = 0.05;
+
+  /// Preview shape (portrait width / height) used until the camera reports
+  /// its own.
+  static const double fallbackPreviewAspect = 3 / 4;
+
+  /// A back lens counts as ultrawide when its 35mm-equivalent focal length is
+  /// at most this share of the main camera's (typically 13mm vs 26mm).
+  static const double ultraWideFocalRatio = 0.7;
+}
+
+/// Channel to the native side that reads camera focal lengths.
+abstract final class LensInfoConstants {
+  static const String channelName = 'pinpoint_capture/lens_info';
+  static const String method = 'equivalentFocalLengths';
 }
 
 abstract final class StorageConstants {

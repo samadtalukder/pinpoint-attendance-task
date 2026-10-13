@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/pending_upload.dart';
 import '../../domain/entities/upload_status.dart';
-import '../../domain/services/mock_upload_mode_store.dart';
 
 enum UploadQueueFeedback { none, retrying, cleared, sampleAdded, actionFailed }
 
@@ -11,7 +10,7 @@ class UploadQueueState extends Equatable {
     this.isLoading = true,
     this.items = const [],
     this.isOnline = true,
-    this.mode = MockUploadMode.success,
+    this.isPaused = false,
     this.feedback = UploadQueueFeedback.none,
   });
 
@@ -20,7 +19,9 @@ class UploadQueueState extends Equatable {
   /// Queue order, oldest first.
   final List<PendingUpload> items;
   final bool isOnline;
-  final MockUploadMode mode;
+
+  /// The user paused syncing; nothing uploads until resumed.
+  final bool isPaused;
   final UploadQueueFeedback feedback;
 
   List<PendingUpload> get pending =>
@@ -50,18 +51,18 @@ class UploadQueueState extends Equatable {
     bool? isLoading,
     List<PendingUpload>? items,
     bool? isOnline,
-    MockUploadMode? mode,
+    bool? isPaused,
     UploadQueueFeedback? feedback,
   }) {
     return UploadQueueState(
       isLoading: isLoading ?? this.isLoading,
       items: items ?? this.items,
       isOnline: isOnline ?? this.isOnline,
-      mode: mode ?? this.mode,
+      isPaused: isPaused ?? this.isPaused,
       feedback: feedback ?? this.feedback,
     );
   }
 
   @override
-  List<Object?> get props => [isLoading, items, isOnline, mode, feedback];
+  List<Object?> get props => [isLoading, items, isOnline, isPaused, feedback];
 }

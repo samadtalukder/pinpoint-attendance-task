@@ -61,6 +61,16 @@ void main() {
     verify(() => scheduler.requestSync()).called(1);
   });
 
+  test('removes the original photos only after the batch is queued', () async {
+    await enqueue(images);
+
+    verifyInOrder([
+      () => queue.enqueueBatch(any()),
+      () => store.delete('/cache/a.jpg'),
+      () => store.delete('/cache/b.jpg'),
+    ]);
+  });
+
   test('rejects an empty batch', () {
     expect(() => enqueue(const []), throwsArgumentError);
   });
@@ -72,6 +82,8 @@ void main() {
 
     verify(() => store.delete('/docs/a.jpg')).called(1);
     verify(() => store.delete('/docs/b.jpg')).called(1);
+    verifyNever(() => store.delete('/cache/a.jpg'));
+    verifyNever(() => store.delete('/cache/b.jpg'));
     verifyNever(() => scheduler.requestSync());
   });
 

@@ -102,6 +102,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
+    // Drives the real system permission dialog.
+    androidTestImplementation(libs.androidx.test.uiautomator)
     // Compose ui-test pulls espresso 3.5, which crashes on API 34+ (InputManager.getInstance).
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.hilt.android.testing)

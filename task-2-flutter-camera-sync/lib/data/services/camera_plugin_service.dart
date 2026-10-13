@@ -9,6 +9,8 @@ import '../../core/constants.dart';
 import '../../domain/entities/captured_image.dart';
 import '../../domain/entities/zoom_capabilities.dart';
 import '../../domain/services/camera_service.dart';
+import 'lens_info_source.dart';
+import 'ultrawide_detection.dart';
 
 /// Adapter over the `camera` plugin.
 ///
@@ -17,29 +19,49 @@ import '../../domain/services/camera_service.dart';
 /// (handled by switching lens). Below 1x on a separate lens the zoom snaps
 /// to 0.5x.
 class CameraPluginService implements CameraService, CameraPreviewSource {
+  CameraPluginService({LensInfoSource? lensInfo})
+    : _lensInfo = lensInfo ?? MethodChannelLensInfoSource();
+
+  final LensInfoSource _lensInfo;
   CameraController? _controller;
   CameraDescription? _main;
   CameraDescription? _ultraWide;
   double _mainMinZoom = ZoomConstants.main;
   double _mainMaxZoom = ZoomConstants.main;
+  bool _canFlip = false;
 
   @override
-  Future<ZoomCapabilities> initialize() async {
+  bool get canFlip => _canFlip;
+
+  @override
+  Future<ZoomCapabilities> initialize({
+    CameraLens lens = CameraLens.back,
+  }) async {
     await dispose();
     try {
-      final back = (await availableCameras())
-          .where((c) => c.lensDirection == CameraLensDirection.back)
-          .toList();
-      if (back.isEmpty) {
+      final all = await availableCameras();
+      final direction = lens == CameraLens.back
+          ? CameraLensDirection.back
+          : CameraLensDirection.front;
+      _canFlip =
+          all.any((c) => c.lensDirection == CameraLensDirection.back) &&
+          all.any((c) => c.lensDirection == CameraLensDirection.front);
+      final candidates = all.where((c) => c.lensDirection == direction);
+      if (candidates.isEmpty) {
         throw const CameraFailure(CameraFailureType.noCamera);
       }
-      _main = back.firstWhere(
+      final list = candidates.toList();
+      _main = list.firstWhere(
         (c) => c.lensType != CameraLensType.ultraWide,
-        orElse: () => back.first,
+        orElse: () => list.first,
       );
-      _ultraWide = back
-          .where((c) => c.lensType == CameraLensType.ultraWide && c != _main)
-          .firstOrNull;
+      _ultraWide = lens == CameraLens.back
+          ? findUltraWide(
+              back: list,
+              main: _main!,
+              equivalentMm: await _lensInfo.equivalentFocalLengths(),
+            )
+          : null;
 
       final controller = CameraController(
         _main!,
@@ -60,6 +82,17 @@ class CameraPluginService implements CameraService, CameraPreviewSource {
     } on CameraException catch (e) {
       await dispose();
       throw CameraFailure(CameraFailureType.unavailable, e.code);
+    }
+  }
+
+  @override
+  Future<void> setFlash(bool on) async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    try {
+      await controller.setFlashMode(on ? FlashMode.always : FlashMode.off);
+    } on CameraException {
+      // Lenses without a flash reject the mode; photos still work.
     }
   }
 
@@ -123,6 +156,16 @@ class CameraPluginService implements CameraService, CameraPreviewSource {
     final controller = _controller;
     _controller = null;
     await controller?.dispose();
+  }
+
+  @override
+  double get aspectRatio {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) {
+      return ZoomConstants.fallbackPreviewAspect;
+    }
+    final landscape = controller.value.aspectRatio;
+    return landscape > 1 ? 1 / landscape : landscape;
   }
 
   @override

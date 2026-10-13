@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/strings.dart';
-import '../../domain/services/mock_upload_mode_store.dart';
+import '../../core/theme.dart';
 import 'upload_queue_cubit.dart';
 import 'upload_queue_state.dart';
 import 'widgets/connection_chip.dart';
@@ -11,9 +11,16 @@ import 'widgets/upload_tile.dart';
 
 /// Pending uploads with live status. Expects an [UploadQueueCubit] above it.
 class UploadManagerScreen extends StatelessWidget {
-  const UploadManagerScreen({super.key, required this.onStartNewBatch});
+  const UploadManagerScreen({
+    super.key,
+    required this.onStartNewBatch,
+    required this.onOpenMockMode,
+  });
 
   final VoidCallback onStartNewBatch;
+
+  /// Opens the picker for the mock upload result (no real API exists).
+  final VoidCallback onOpenMockMode;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +33,15 @@ class UploadManagerScreen extends StatelessWidget {
         final cubit = context.read<UploadQueueCubit>();
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.uploadsTitle),
+            automaticallyImplyLeading: false,
+            titleSpacing: 16,
+            title: Text(
+              AppStrings.uploadsTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
             actions: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -35,39 +50,21 @@ class UploadManagerScreen extends StatelessWidget {
               PopupMenuButton<_MenuAction>(
                 tooltip: AppStrings.moreOptions,
                 onSelected: (action) => switch (action) {
-                  _MenuAction.mockSuccess => cubit.setMockMode(
-                    MockUploadMode.success,
-                  ),
-                  _MenuAction.mockFailure => cubit.setMockMode(
-                    MockUploadMode.failure,
-                  ),
-                  _MenuAction.mockSlow => cubit.setMockMode(
-                    MockUploadMode.slow,
-                  ),
+                  _MenuAction.mockMode => onOpenMockMode(),
+                  _MenuAction.retryNow => cubit.retryNow(),
                   _MenuAction.addSample => cubit.addSampleBatch(),
                   _MenuAction.clearSynced => cubit.clearSynced(),
                 },
                 itemBuilder: (_) => [
                   const PopupMenuItem(
-                    enabled: false,
+                    value: _MenuAction.mockMode,
                     child: Text(AppStrings.menuMockMode),
                   ),
-                  _modeItem(
-                    _MenuAction.mockSuccess,
-                    AppStrings.mockSuccess,
-                    state.mode == MockUploadMode.success,
+                  PopupMenuItem(
+                    value: _MenuAction.retryNow,
+                    enabled: state.pendingCount > 0 && !state.isUploading,
+                    child: const Text(AppStrings.retryNow),
                   ),
-                  _modeItem(
-                    _MenuAction.mockFailure,
-                    AppStrings.mockFailure,
-                    state.mode == MockUploadMode.failure,
-                  ),
-                  _modeItem(
-                    _MenuAction.mockSlow,
-                    AppStrings.mockSlow,
-                    state.mode == MockUploadMode.slow,
-                  ),
-                  const PopupMenuDivider(),
                   const PopupMenuItem(
                     value: _MenuAction.addSample,
                     child: Text(AppStrings.addSampleBatch),
@@ -97,26 +94,6 @@ class UploadManagerScreen extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<_MenuAction> _modeItem(
-    _MenuAction action,
-    String label,
-    bool selected,
-  ) {
-    return PopupMenuItem(
-      value: action,
-      child: Row(
-        children: [
-          Icon(
-            selected ? Icons.radio_button_checked : Icons.radio_button_off,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Flexible(child: Text(label)),
-        ],
-      ),
-    );
-  }
-
   void _showFeedback(BuildContext context, UploadQueueState state) {
     final message = switch (state.feedback) {
       UploadQueueFeedback.retrying => AppStrings.feedbackRetrying,
@@ -134,7 +111,7 @@ class UploadManagerScreen extends StatelessWidget {
   }
 }
 
-enum _MenuAction { mockSuccess, mockFailure, mockSlow, addSample, clearSynced }
+enum _MenuAction { mockMode, retryNow, addSample, clearSynced }
 
 class _Body extends StatelessWidget {
   const _Body({required this.state});
@@ -178,7 +155,11 @@ class _Body extends StatelessWidget {
     final synced = state.synced;
     return ListView(
       children: [
-        SyncProgressHeader(state: state, onRetryNow: cubit.retryNow),
+        SyncProgressHeader(
+          state: state,
+          onPause: cubit.pauseAll,
+          onResume: cubit.resume,
+        ),
         if (pending.isNotEmpty) ...[
           _SectionHeader(
             '${AppStrings.pendingUploadsHeader} (${pending.length})',
@@ -188,6 +169,7 @@ class _Body extends StatelessWidget {
               key: ValueKey(item.id),
               upload: item,
               online: state.isOnline,
+              paused: state.isPaused,
             ),
         ],
         if (synced.isNotEmpty) ...[
@@ -197,6 +179,7 @@ class _Body extends StatelessWidget {
               key: ValueKey(item.id),
               upload: item,
               online: state.isOnline,
+              paused: state.isPaused,
             ),
         ],
       ],
@@ -215,7 +198,13 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Semantics(
         header: true,
-        child: Text(text, style: Theme.of(context).textTheme.titleSmall),
+        child: Text(
+          text.toUpperCase(),
+          style: AppTheme.label(
+            context,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }

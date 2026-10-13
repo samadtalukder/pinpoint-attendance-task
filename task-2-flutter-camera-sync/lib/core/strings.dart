@@ -7,6 +7,10 @@ abstract final class AppStrings {
   static const String cameraStarting = 'Starting camera…';
   static const String takePhoto = 'Take photo';
   static const String openUploads = 'Open upload manager';
+  static const String closeCamera = 'Close camera';
+  static const String flashOn = 'Flash on';
+  static const String flashOff = 'Flash off';
+  static const String flipCamera = 'Switch camera';
   static const String uploadsTitle = 'Upload Manager';
   static const String zoomSlider = 'Zoom';
   static const String focusHint = 'Tap the preview to focus';
@@ -23,6 +27,8 @@ abstract final class AppStrings {
       : '$count photos queued for upload';
 
   static const String captureFailed = 'Could not take the photo. Try again.';
+  static const String flipFailed =
+      'Could not switch the camera. Staying on the current one.';
   static const String queueFailed =
       'Could not queue the batch. Your photos are kept, try again.';
 
@@ -47,7 +53,8 @@ abstract final class AppStrings {
   static const String pendingUploadsHeader = 'Pending uploads';
   static const String syncedHeader = 'Synced';
   static const String batchSyncProgress = 'Batch sync progress';
-  static const String online = 'Online';
+  static const String uploadedSuffix = 'Uploaded';
+  static const String online = 'Stable link';
   static const String offline = 'Offline';
   static const String retryNow = 'Retry now';
   static const String startNewBatch = 'Start new upload batch';
@@ -65,15 +72,17 @@ abstract final class AppStrings {
   static const String loadingQueue = 'Loading uploads…';
 
   static const String statusWaitingOffline = 'Waiting for connection';
-  static const String statusWaiting = 'Waiting to upload';
+  static const String statusWaiting = 'In queue';
+  static const String statusPaused = 'Paused';
+  static const String pauseAll = 'Pause all';
+  static const String resumeAll = 'Resume';
   static const String statusUploading = 'Uploading…';
   static const String statusSynced = 'Synced';
   static String statusRetrying(int attempt) => 'Retrying… (attempt $attempt)';
-  static String uploadedCount(int synced, int total) =>
-      '$synced of $total uploaded';
   static String progressSemantics(int percent) =>
       'Upload progress $percent percent';
-  static String sizeProgress(String done, String total) => '$done / $total';
+  static String sizeProgress(String done, String total) =>
+      '$done / $total $uploadedSuffix';
 
   static const String feedbackRetrying = 'Retrying uploads now';
   static const String feedbackCleared = 'Synced uploads cleared';

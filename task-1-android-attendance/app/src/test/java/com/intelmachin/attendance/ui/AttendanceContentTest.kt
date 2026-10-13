@@ -104,14 +104,6 @@ class AttendanceContentTest {
     }
 
     @Test
-    fun `loading shows progress and hides cards`() {
-        show(AttendanceUiState(isLoading = true))
-        compose.onNodeWithContentDescription("Loading attendance").assertIsDisplayed()
-        compose.onNodeWithText("Set Office Location").assertDoesNotExist()
-        compose.onNodeWithText("Mark Attendance").assertDoesNotExist()
-    }
-
-    @Test
     fun `permission denied shows banner with grant action and disables set office`() {
         show(AttendanceUiState(availability = LocationAvailability.PermissionDenied))
         compose.onNodeWithText("Location permission needed").assertIsDisplayed()

@@ -22,12 +22,16 @@ class CameraCubit extends Cubit<CameraState> {
   int _focusCounter = 0;
   bool _released = false;
 
-  Future<void> initialize() async {
+  /// [promptForPermission] is false for the first open and for lifecycle
+  /// restarts. On first open the screen explains why the camera is needed and
+  /// its button asks. On resume, the system dialog itself pauses and resumes
+  /// the app, so prompting there would loop.
+  Future<void> initialize({bool promptForPermission = true}) async {
     _released = false;
     emit(state.copyWith(status: CameraStatus.initializing));
 
     var permission = await _permission.status();
-    if (permission == CameraPermission.denied) {
+    if (promptForPermission && permission == CameraPermission.denied) {
       permission = await _permission.request();
     }
     if (isClosed) return;
@@ -42,26 +46,74 @@ class CameraCubit extends Cubit<CameraState> {
   }
 
   Future<void> _startCamera() async {
+    final failure = await _open();
+    if (failure == null || isClosed) return;
+    emit(
+      state.copyWith(
+        status: failure.type == CameraFailureType.noCamera
+            ? CameraStatus.noCamera
+            : CameraStatus.error,
+      ),
+    );
+  }
+
+  /// Starts the camera on the current lens. Emits `ready` and returns null on
+  /// success; returns the failure without emitting otherwise.
+  Future<CameraFailure?> _open() async {
     try {
-      final capabilities = await _camera.initialize();
-      if (isClosed) return;
+      final capabilities = await _camera.initialize(lens: state.lens);
+      if (_released && !isClosed) {
+        // The app went to the background while the camera was starting. Give
+        // it back; onAppResumed restarts it.
+        await _camera.dispose();
+        return null;
+      }
+      if (state.flashOn && state.hasFlash) await _camera.setFlash(true);
+      if (isClosed) return null;
       emit(
         state.copyWith(
           status: CameraStatus.ready,
           capabilities: capabilities,
+          canFlip: _camera.canFlip,
           zoom: capabilities.clamp(ZoomConstants.main),
         ),
       );
+      return null;
     } on CameraFailure catch (failure) {
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          status: failure.type == CameraFailureType.noCamera
-              ? CameraStatus.noCamera
-              : CameraStatus.error,
-        ),
-      );
+      return failure;
+    } catch (_) {
+      return const CameraFailure(CameraFailureType.unavailable);
     }
+  }
+
+  Future<void> toggleFlash() async {
+    if (!state.isReady || !state.hasFlash) return;
+    final on = !state.flashOn;
+    emit(state.copyWith(flashOn: on));
+    await _camera.setFlash(on);
+  }
+
+  /// Switches between back and front camera. The preview widget leaves the
+  /// tree first (status `initializing`), like on pause. If the other lens
+  /// cannot start, the previous one comes back.
+  Future<void> flipCamera() async {
+    if (!state.isReady || !state.canFlip) return;
+    final previous = state.lens;
+    final next = previous == CameraLens.back
+        ? CameraLens.front
+        : CameraLens.back;
+    emit(state.copyWith(status: CameraStatus.initializing, lens: next));
+    final failure = await _open();
+    if (failure == null || isClosed) return;
+    emit(state.copyWith(lens: previous));
+    final fallback = await _open();
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        status: fallback == null ? CameraStatus.ready : CameraStatus.error,
+        feedback: CameraFeedback.flipFailed,
+      ),
+    );
   }
 
   /// Slider and preset buttons.
@@ -119,7 +171,8 @@ class CameraCubit extends Cubit<CameraState> {
       final image = await _camera.capture();
       if (isClosed) return;
       emit(state.copyWith(batch: [...state.batch, image], isCapturing: false));
-    } on CameraFailure {
+    } catch (_) {
+      // Any failure (camera, file system) must release the shutter.
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -160,8 +213,9 @@ class CameraCubit extends Cubit<CameraState> {
   /// state leaves `ready` first so the preview widget is gone before the
   /// controller is disposed.
   Future<void> onAppPaused() async {
-    if (!state.isReady) return;
+    // Also remembered while the camera is still starting; see [_open].
     _released = true;
+    if (!state.isReady) return;
     emit(state.copyWith(status: CameraStatus.initializing));
     await _camera.dispose();
   }
@@ -169,15 +223,19 @@ class CameraCubit extends Cubit<CameraState> {
   /// Restarts a released camera, and re-checks after a failure, e.g. the
   /// user granted the permission in system settings.
   Future<void> onAppResumed() async {
-    final retryable =
-        _released ||
-        switch (state.status) {
-          CameraStatus.permissionDenied ||
-          CameraStatus.permissionPermanentlyDenied ||
-          CameraStatus.error => true,
-          _ => false,
-        };
-    if (retryable) await initialize();
+    switch (state.status) {
+      case CameraStatus.permissionDenied:
+      case CameraStatus.permissionPermanentlyDenied:
+        // status() cannot tell "denied" from "blocked" on Android, so it may
+        // only upgrade to granted, never overwrite what request() reported.
+        if (await _permission.status() == CameraPermission.granted) {
+          await initialize(promptForPermission: false);
+        }
+      case CameraStatus.error:
+        await initialize(promptForPermission: false);
+      default:
+        if (_released) await initialize(promptForPermission: false);
+    }
   }
 
   Future<void> openSettings() => _permission.openSettings();

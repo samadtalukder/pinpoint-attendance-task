@@ -2,22 +2,26 @@ import 'package:flutter/material.dart';
 
 import '../../../core/format.dart';
 import '../../../core/strings.dart';
+import '../../../core/theme.dart';
 import '../upload_queue_state.dart';
 
 class SyncProgressHeader extends StatelessWidget {
   const SyncProgressHeader({
     super.key,
     required this.state,
-    required this.onRetryNow,
+    required this.onPause,
+    required this.onResume,
   });
 
   final UploadQueueState state;
-  final VoidCallback onRetryNow;
+  final VoidCallback onPause;
+  final VoidCallback onResume;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final percent = (state.progress * 100).round();
+    final canToggle = state.isPaused || state.pendingCount > 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
@@ -27,11 +31,14 @@ class SyncProgressHeader extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  AppStrings.batchSyncProgress,
-                  style: theme.textTheme.labelLarge,
+                  AppStrings.batchSyncProgress.toUpperCase(),
+                  style: AppTheme.label(
+                    context,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-              Text('$percent%', style: theme.textTheme.labelLarge),
+              Text('$percent%', style: AppTheme.label(context)),
             ],
           ),
           const SizedBox(height: 8),
@@ -46,23 +53,36 @@ class SyncProgressHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  '${AppStrings.uploadedCount(state.syncedCount, state.total)}'
-                  ' · ${AppStrings.sizeProgress(formatBytes(state.syncedBytes), formatBytes(state.totalBytes))}',
+                  AppStrings.sizeProgress(
+                    formatBytes(state.syncedBytes),
+                    formatBytes(state.totalBytes),
+                  ),
                   style: theme.textTheme.bodySmall,
                 ),
               ),
-              TextButton.icon(
-                onPressed: state.pendingCount > 0 && !state.isUploading
-                    ? onRetryNow
-                    : null,
-                icon: const Icon(Icons.refresh),
-                label: const Text(AppStrings.retryNow),
-              ),
+              if (canToggle)
+                TextButton.icon(
+                  onPressed: state.isPaused ? onResume : onPause,
+                  icon: Icon(
+                    state.isPaused ? Icons.play_arrow : Icons.pause,
+                    size: 18,
+                  ),
+                  label: Text(
+                    (state.isPaused
+                            ? AppStrings.resumeAll
+                            : AppStrings.pauseAll)
+                        .toUpperCase(),
+                    style: AppTheme.label(context),
+                  ),
+                )
+              else
+                // Keeps the row height stable when nothing is left to pause.
+                const SizedBox(height: kMinInteractiveDimension),
             ],
           ),
         ],

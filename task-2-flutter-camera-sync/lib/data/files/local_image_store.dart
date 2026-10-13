@@ -26,9 +26,9 @@ class LocalImageStore implements ImageStore {
     final fileName = await _uniqueName(dir, image.name);
     final target = File(p.join(dir.path, fileName));
     final source = File(image.path);
-    // Copy then delete: rename fails across volumes (cache vs documents).
+    // Copy, never move: the caller deletes the original once the batch is
+    // queued, so a failed enqueue does not lose the photo.
     await source.copy(target.path);
-    await _deleteQuietly(source);
 
     return NewUpload(
       filePath: target.path,

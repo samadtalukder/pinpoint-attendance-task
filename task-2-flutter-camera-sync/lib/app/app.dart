@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/strings.dart';
+import '../core/theme.dart';
 import '../presentation/camera/camera_cubit.dart';
 import '../presentation/camera/camera_preview_screen.dart';
+import '../presentation/settings/mock_mode_cubit.dart';
+import '../presentation/settings/mock_mode_sheet.dart';
 import '../presentation/upload_manager/upload_manager_screen.dart';
 import '../presentation/upload_manager/upload_queue_cubit.dart';
 import 'di.dart';
@@ -17,27 +21,27 @@ class PinpointApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: AppStrings.appName,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.dark(),
       home: BlocProvider(
         create: (_) => CameraCubit(
           dependencies.camera,
           dependencies.cameraPermission,
           dependencies.enqueueBatch,
-        )..initialize(),
+        )..initialize(promptForPermission: false),
         child: Builder(
           builder: (context) => CameraPreviewScreen(
             previewSource: dependencies.cameraPreview,
             onOpenUploads: () => _openUploads(context),
+            onClose: SystemNavigator.pop,
           ),
         ),
       ),
     );
+  }
+
+  void _openMockMode(BuildContext context) {
+    final cubit = MockModeCubit(dependencies.modeStore)..load();
+    MockModeSheet.show(context, cubit).whenComplete(cubit.close);
   }
 
   void _openUploads(BuildContext context) {
@@ -48,12 +52,14 @@ class PinpointApp extends StatelessWidget {
             queue: dependencies.queue,
             connectivity: dependencies.connectivity,
             scheduler: dependencies.scheduler,
-            modeStore: dependencies.modeStore,
+            pauseStore: dependencies.pauseStore,
             changeBus: dependencies.changeBus,
-            imageStore: dependencies.imageStore,
+            clearSynced: dependencies.clearSynced,
+            addSampleBatch: dependencies.addSampleBatch,
           )..initialize(),
           child: UploadManagerScreen(
             onStartNewBatch: () => Navigator.of(routeContext).pop(),
+            onOpenMockMode: () => _openMockMode(routeContext),
           ),
         ),
       ),

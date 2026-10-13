@@ -13,6 +13,7 @@ import 'package:pinpoint_capture/data/repositories/sqflite_upload_queue_reposito
 import 'package:pinpoint_capture/data/services/isolate_queue_change_bus.dart';
 import 'package:pinpoint_capture/data/services/mock_upload_api.dart';
 import 'package:pinpoint_capture/domain/usecases/process_upload_queue_use_case.dart';
+import 'package:pinpoint_capture/presentation/camera/widgets/zoom_preset_buttons.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'support/fakes.dart';
@@ -28,6 +29,7 @@ void main() {
       final dbPath = p.join(workDir.path, 'queue.db');
       final camera = FakeCameraService(workDir);
       final modeStore = InMemoryModeStore(); // starts in failure mode
+      final pauseStore = InMemoryPauseStore();
       final scheduler = RecordingSyncScheduler();
       final connectivity = FakeConnectivityService();
 
@@ -42,6 +44,7 @@ void main() {
           queue: queue,
           uploadApi: api,
           modeStore: modeStore,
+          pauseStore: pauseStore,
           connectivity: connectivity,
           scheduler: scheduler,
           changeBus: changeBus,
@@ -58,48 +61,84 @@ void main() {
       var (deps, db) = await startApp();
 
       // Capture two photos and queue them as one batch.
-      expect(find.text('0.5x'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ZoomPresetButtons),
+          matching: find.text('0.5x'),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const Key('shutter')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('shutter')));
       await tester.pumpAndSettle();
-      expect(find.text(AppStrings.uploadBatch(2)), findsOneWidget);
+      expect(
+        find.text(AppStrings.uploadBatch(2).toUpperCase()),
+        findsOneWidget,
+      );
 
-      await tester.tap(find.text(AppStrings.uploadBatch(2)));
+      await tester.tap(find.text(AppStrings.uploadBatch(2).toUpperCase()));
       await tester.pumpAndSettle();
-      expect(find.text(AppStrings.batchQueued(2)), findsOneWidget);
+      // Queueing lands on the upload manager.
+      expect(find.text(AppStrings.uploadsTitle), findsOneWidget);
       expect(scheduler.requests, [false], reason: 'a sync was requested');
 
       // The worker runs while the network is down: the upload fails.
       expect(await deps.processUploadQueue(), SyncResult.failed);
 
-      // Process restart: new objects over the same database.
+      // Process restart: the old UI dies, new objects open the same database.
+      await tester.pumpWidget(const SizedBox.shrink());
       await db.close();
       (deps, db) = await startApp();
       addTearDown(db.close);
 
-      await tester.tap(find.byTooltip(AppStrings.openUploads));
+      await tester.tap(find.byKey(const Key('batch_thumbnail')));
       await tester.pumpAndSettle();
       expect(
-        find.text('${AppStrings.pendingUploadsHeader} (2)'),
+        find.text('${AppStrings.pendingUploadsHeader} (2)'.toUpperCase()),
         findsOneWidget,
       );
-      expect(find.text(AppStrings.statusRetrying(1)), findsOneWidget);
-      expect(find.text('No internet connection'), findsOneWidget);
-      expect(find.text(AppStrings.statusSynced), findsNothing);
+      expect(
+        find.text(AppStrings.statusRetrying(1).toUpperCase()),
+        findsNWidgets(2), // one status per queued photo
+      );
+      expect(find.text('No internet connection'), findsNWidgets(2));
+      expect(find.text(AppStrings.statusSynced.toUpperCase()), findsNothing);
 
-      // Connection comes back: flip the mock to success, worker runs again.
+      // Pause all: the worker leaves the queue alone.
+      await tester.tap(find.text(AppStrings.pauseAll.toUpperCase()));
+      await tester.pumpAndSettle();
+      expect(await deps.processUploadQueue(), SyncResult.paused);
+      expect(await deps.queue.getUnsynced(), hasLength(2));
+
+      // Connection comes back: flip the mock to success from the manager's
+      // menu, resume, and the worker drains the queue.
       await tester.tap(find.byTooltip(AppStrings.moreOptions));
       await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.menuMockMode));
+      await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.mockSuccess));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(10, 10)); // dismiss the sheet
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.resumeAll.toUpperCase()));
       await tester.pumpAndSettle();
 
       expect(await deps.processUploadQueue(), SyncResult.completed);
       await tester.pumpAndSettle();
 
-      expect(find.text('${AppStrings.pendingUploadsHeader} (2)'), findsNothing);
-      expect(find.text('${AppStrings.syncedHeader} (2)'), findsOneWidget);
-      expect(find.text(AppStrings.statusSynced), findsNWidgets(2));
+      expect(
+        find.text('${AppStrings.pendingUploadsHeader} (2)'.toUpperCase()),
+        findsNothing,
+      );
+      expect(
+        find.text('${AppStrings.syncedHeader} (2)'.toUpperCase()),
+        findsOneWidget,
+      );
+      expect(
+        find.text(AppStrings.statusSynced.toUpperCase()),
+        findsNWidgets(2),
+      );
       expect(find.text('100%'), findsOneWidget);
       expect(await deps.queue.getUnsynced(), isEmpty);
     },
