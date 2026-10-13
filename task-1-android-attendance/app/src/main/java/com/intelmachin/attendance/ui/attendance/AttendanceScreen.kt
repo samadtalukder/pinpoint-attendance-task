@@ -28,8 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import android.content.pm.PackageManager
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -72,12 +70,7 @@ fun AttendanceScreen(
         ActivityResultContracts.StartIntentSenderForResult(),
     ) { viewModel.onScreenResumed() }
 
-    // Ask once on entry; Android answers instantly if the user already blocked the prompt.
-    LaunchedEffect(Unit) {
-        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!granted) requestPermission()
-    }
+    // No auto-prompt: the permission banner explains why location is needed, and its button asks.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onScreenResumed() }
 
     val message = state.message

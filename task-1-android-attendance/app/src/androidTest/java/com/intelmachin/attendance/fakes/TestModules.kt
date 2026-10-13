@@ -1,5 +1,9 @@
 package com.intelmachin.attendance.fakes
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import com.intelmachin.attendance.di.ClockModule
 import com.intelmachin.attendance.di.LocationModule
 import com.intelmachin.attendance.di.StorageModule
@@ -13,6 +17,7 @@ import com.intelmachin.attendance.domain.repository.OfficeRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,19 +33,38 @@ val TEST_CLOCK: Clock = ZoneId.systemDefault().let { zone ->
     Clock.fixed(LocalDateTime.of(2026, 10, 12, 9, 30).atZone(zone).toInstant(), zone)
 }
 
-/** Fake GPS: the test moves the user by calling [moveTo]. */
+/**
+ * Fake GPS: the test moves the user by calling [moveTo]. Reports [LocationStatus.PermissionDenied] until the
+ * app really holds the location permission, so the real system dialog drives the flow.
+ */
 @Singleton
-class FakeLocationRepository @Inject constructor() : LocationRepository {
-    private val state = MutableStateFlow<LocationStatus>(LocationStatus.Searching)
+class FakeLocationRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
+) : LocationRepository {
+    private var fix: LocationFix? = null
+    private val state = MutableStateFlow(evaluate())
     override val status: StateFlow<LocationStatus> = state
 
-    override fun refresh() = Unit
+    override fun refresh() {
+        state.value = evaluate()
+    }
+
     override suspend fun currentFix(): LocationFix? = (state.value as? LocationStatus.Available)?.fix
 
     fun moveTo(point: GeoPoint) {
-        state.value = LocationStatus.Available(
-            LocationFix(point, accuracyMeters = 5f, isMock = false, timeMillis = TEST_CLOCK.millis()),
-        )
+        fix = LocationFix(point, accuracyMeters = 5f, isMock = false, timeMillis = TEST_CLOCK.millis())
+        refresh()
+    }
+
+    private fun evaluate(): LocationStatus {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        val current = fix
+        return when {
+            !granted -> LocationStatus.PermissionDenied
+            current == null -> LocationStatus.Searching
+            else -> LocationStatus.Available(current)
+        }
     }
 }
 
