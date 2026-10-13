@@ -7,7 +7,6 @@ PROMPTS.raw.md
 key.properties
 local.properties
 .env
-.claude/settings.local.json
 
 # Android
 .gradle/
@@ -34,3 +33,6 @@ assessment-brief.pdf
 
 # Agent instructions (local only)
 CLAUDE.md
+
+# Claude Code config (local only)
+.claude/
