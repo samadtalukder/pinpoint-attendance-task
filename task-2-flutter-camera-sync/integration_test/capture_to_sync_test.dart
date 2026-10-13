@@ -28,6 +28,7 @@ void main() {
       final dbPath = p.join(workDir.path, 'queue.db');
       final camera = FakeCameraService(workDir);
       final modeStore = InMemoryModeStore(); // starts in failure mode
+      final pauseStore = InMemoryPauseStore();
       final scheduler = RecordingSyncScheduler();
       final connectivity = FakeConnectivityService();
 
@@ -42,6 +43,7 @@ void main() {
           queue: queue,
           uploadApi: api,
           modeStore: modeStore,
+          pauseStore: pauseStore,
           connectivity: connectivity,
           scheduler: scheduler,
           changeBus: changeBus,

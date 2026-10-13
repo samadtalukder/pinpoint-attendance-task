@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../core/constants.dart';
 import '../repositories/upload_queue_repository.dart';
 import '../services/queue_change_bus.dart';
+import '../services/sync_pause_store.dart';
 import '../services/upload_api.dart';
 
 enum SyncResult {
@@ -14,20 +15,27 @@ enum SyncResult {
 
   /// An upload failed; remaining images stay queued for a retry.
   failed,
+
+  /// The user paused syncing; remaining images stay queued untouched.
+  paused,
 }
 
 /// Uploads the queue oldest first. Stops at the first failure so a dead
-/// connection is not hammered; failed and untouched rows stay queued.
+/// connection is not hammered; failed and untouched rows stay queued. Checks
+/// the pause flag before every image, so pausing takes effect after the
+/// upload in flight.
 class ProcessUploadQueueUseCase {
   ProcessUploadQueueUseCase(
     this._queue,
     this._api, {
+    required this._pauseStore,
     this._timeout = SyncConstants.uploadTimeout,
     this._changeBus,
   });
 
   final UploadQueueRepository _queue;
   final UploadApi _api;
+  final SyncPauseStore _pauseStore;
   final Duration _timeout;
 
   /// Told after every row change so an open Upload Manager shows live
@@ -46,6 +54,7 @@ class ProcessUploadQueueUseCase {
     if (pending.isEmpty) return SyncResult.idle;
 
     for (final item in pending) {
+      if (await _pauseStore.isPaused()) return SyncResult.paused;
       await _queue.markUploading(item.id);
       _changeBus?.notify();
       try {

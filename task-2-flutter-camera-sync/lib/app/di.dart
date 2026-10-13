@@ -10,6 +10,7 @@ import '../data/services/isolate_queue_change_bus.dart';
 import '../data/services/mock_upload_api.dart';
 import '../data/services/permission_handler_camera_permission_service.dart';
 import '../data/services/shared_prefs_mock_upload_mode_store.dart';
+import '../data/services/shared_prefs_sync_pause_store.dart';
 import '../data/services/workmanager_sync_scheduler.dart';
 import '../domain/repositories/upload_queue_repository.dart';
 import '../domain/services/camera_permission_service.dart';
@@ -18,6 +19,7 @@ import '../domain/services/connectivity_service.dart';
 import '../domain/services/image_store.dart';
 import '../domain/services/mock_upload_mode_store.dart';
 import '../domain/services/queue_change_bus.dart';
+import '../domain/services/sync_pause_store.dart';
 import '../domain/services/sync_scheduler.dart';
 import '../domain/services/upload_api.dart';
 import '../domain/usecases/enqueue_batch_use_case.dart';
@@ -32,6 +34,7 @@ class AppDependencies {
     required this.queue,
     required this.uploadApi,
     required this.modeStore,
+    required this.pauseStore,
     required this.connectivity,
     required this.scheduler,
     required this.changeBus,
@@ -43,6 +46,7 @@ class AppDependencies {
        processUploadQueue = ProcessUploadQueueUseCase(
          queue,
          uploadApi,
+         pauseStore: pauseStore,
          changeBus: changeBus,
        ),
        syncCoordinator = SyncCoordinator(queue, connectivity, scheduler);
@@ -50,6 +54,7 @@ class AppDependencies {
   final UploadQueueRepository queue;
   final UploadApi uploadApi;
   final MockUploadModeStore modeStore;
+  final SyncPauseStore pauseStore;
   final ConnectivityService connectivity;
   final SyncScheduler scheduler;
   final QueueChangeBus changeBus;
@@ -71,6 +76,7 @@ class AppDependencies {
       queue: SqfliteUploadQueueRepository(db),
       uploadApi: MockUploadApi(modeStore),
       modeStore: modeStore,
+      pauseStore: SharedPrefsSyncPauseStore(),
       connectivity: ConnectivityPlusService(),
       scheduler: WorkmanagerSyncScheduler(),
       changeBus: IsolateQueueChangeBus(),

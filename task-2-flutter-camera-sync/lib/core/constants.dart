@@ -21,6 +21,7 @@ abstract final class SyncConstants {
   static const Duration mockSlowLatency = Duration(seconds: 30);
 
   static const String modePreferenceKey = 'mock_upload_mode';
+  static const String pausePreferenceKey = 'sync_paused';
 
   /// Unique work name: only one sync job exists at a time, so there is a
   /// single uploader.

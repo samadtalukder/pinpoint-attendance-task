@@ -49,6 +49,7 @@ class PinpointApp extends StatelessWidget {
             connectivity: dependencies.connectivity,
             scheduler: dependencies.scheduler,
             modeStore: dependencies.modeStore,
+            pauseStore: dependencies.pauseStore,
             changeBus: dependencies.changeBus,
             imageStore: dependencies.imageStore,
           )..initialize(),

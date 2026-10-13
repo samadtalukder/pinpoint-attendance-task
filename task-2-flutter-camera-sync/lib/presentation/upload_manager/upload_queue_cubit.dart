@@ -9,6 +9,7 @@ import '../../domain/services/connectivity_service.dart';
 import '../../domain/services/image_store.dart';
 import '../../domain/services/mock_upload_mode_store.dart';
 import '../../domain/services/queue_change_bus.dart';
+import '../../domain/services/sync_pause_store.dart';
 import '../../domain/services/sync_scheduler.dart';
 import 'upload_queue_state.dart';
 
@@ -18,6 +19,7 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
     required this._connectivity,
     required this._scheduler,
     required this._modeStore,
+    required this._pauseStore,
     required this._changeBus,
     required this._imageStore,
   }) : super(const UploadQueueState());
@@ -26,6 +28,7 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
   final ConnectivityService _connectivity;
   final SyncScheduler _scheduler;
   final MockUploadModeStore _modeStore;
+  final SyncPauseStore _pauseStore;
   final QueueChangeBus _changeBus;
   final ImageStore _imageStore;
 
@@ -39,6 +42,7 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
     });
     final online = await _connectivity.isOnline();
     final mode = await _modeStore.read();
+    final paused = await _pauseStore.isPaused();
     final items = await _queue.getAll();
     if (isClosed) return;
     emit(
@@ -47,6 +51,7 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
         items: items,
         isOnline: online,
         mode: mode,
+        isPaused: paused,
       ),
     );
   }
@@ -61,6 +66,18 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
     () => _scheduler.requestSync(immediate: true),
     UploadQueueFeedback.retrying,
   );
+
+  /// The worker stops after the upload in flight; queued images stay put.
+  Future<void> pauseAll() => _run(() async {
+    await _pauseStore.write(true);
+    if (!isClosed) emit(state.copyWith(isPaused: true));
+  }, UploadQueueFeedback.none);
+
+  Future<void> resume() => _run(() async {
+    await _pauseStore.write(false);
+    if (!isClosed) emit(state.copyWith(isPaused: false));
+    await _scheduler.requestSync(immediate: true);
+  }, UploadQueueFeedback.none);
 
   Future<void> setMockMode(MockUploadMode mode) async {
     await _modeStore.write(mode);

@@ -12,6 +12,7 @@ import 'package:pinpoint_capture/domain/services/connectivity_service.dart';
 import 'package:pinpoint_capture/domain/services/image_store.dart';
 import 'package:pinpoint_capture/domain/services/mock_upload_mode_store.dart';
 import 'package:pinpoint_capture/domain/services/queue_change_bus.dart';
+import 'package:pinpoint_capture/domain/services/sync_pause_store.dart';
 import 'package:pinpoint_capture/domain/services/sync_scheduler.dart';
 import 'package:pinpoint_capture/presentation/upload_manager/upload_queue_cubit.dart';
 import 'package:pinpoint_capture/presentation/upload_manager/upload_queue_state.dart';
@@ -23,6 +24,8 @@ class MockConnectivity extends Mock implements ConnectivityService {}
 class MockScheduler extends Mock implements SyncScheduler {}
 
 class MockModeStore extends Mock implements MockUploadModeStore {}
+
+class MockPauseStore extends Mock implements SyncPauseStore {}
 
 class MockBus extends Mock implements QueueChangeBus {}
 
@@ -49,6 +52,7 @@ void main() {
   late MockConnectivity connectivity;
   late MockScheduler scheduler;
   late MockModeStore modeStore;
+  late MockPauseStore pauseStore;
   late MockBus bus;
   late MockImageStore imageStore;
   late StreamController<void> changes;
@@ -66,6 +70,7 @@ void main() {
     connectivity = MockConnectivity();
     scheduler = MockScheduler();
     modeStore = MockModeStore();
+    pauseStore = MockPauseStore();
     bus = MockBus();
     imageStore = MockImageStore();
     changes = StreamController<void>.broadcast();
@@ -78,6 +83,8 @@ void main() {
     when(() => modeStore.read())
         .thenAnswer((_) async => MockUploadMode.success);
     when(() => modeStore.write(any())).thenAnswer((_) async {});
+    when(() => pauseStore.isPaused()).thenAnswer((_) async => false);
+    when(() => pauseStore.write(any())).thenAnswer((_) async {});
     when(() => scheduler.requestSync(immediate: any(named: 'immediate')))
         .thenAnswer((_) async {});
     when(() => imageStore.delete(any())).thenAnswer((_) async {});
@@ -89,6 +96,7 @@ void main() {
       connectivity: connectivity,
       scheduler: scheduler,
       modeStore: modeStore,
+      pauseStore: pauseStore,
       changeBus: bus,
       imageStore: imageStore,
     );
@@ -216,5 +224,48 @@ void main() {
     await cubit.retryNow();
 
     expect(cubit.state.feedback, UploadQueueFeedback.actionFailed);
+  });
+
+  group('pause all', () {
+    test('initialize restores a paused queue', () async {
+      when(() => pauseStore.isPaused()).thenAnswer((_) async => true);
+
+      final cubit = await started();
+
+      expect(cubit.state.isPaused, isTrue);
+    });
+
+    test('pauseAll persists the flag and updates the state', () async {
+      final cubit = await started();
+
+      await cubit.pauseAll();
+
+      verify(() => pauseStore.write(true)).called(1);
+      expect(cubit.state.isPaused, isTrue);
+      verifyNever(
+        () => scheduler.requestSync(immediate: any(named: 'immediate')),
+      );
+    });
+
+    test('resume clears the flag and restarts the worker now', () async {
+      when(() => pauseStore.isPaused()).thenAnswer((_) async => true);
+      final cubit = await started();
+
+      await cubit.resume();
+
+      verify(() => pauseStore.write(false)).called(1);
+      verify(() => scheduler.requestSync(immediate: true)).called(1);
+      expect(cubit.state.isPaused, isFalse);
+    });
+
+    test('a failing store reports feedback and keeps the state', () async {
+      when(() => pauseStore.write(any())).thenThrow(StateError('prefs'));
+      final cubit = await started();
+
+      await cubit.pauseAll();
+
+      expect(cubit.state.isPaused, isFalse);
+      expect(cubit.state.feedback, UploadQueueFeedback.actionFailed);
+    });
   });
 }

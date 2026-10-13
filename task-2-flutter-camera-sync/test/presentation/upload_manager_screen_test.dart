@@ -12,6 +12,7 @@ import 'package:pinpoint_capture/domain/services/connectivity_service.dart';
 import 'package:pinpoint_capture/domain/services/image_store.dart';
 import 'package:pinpoint_capture/domain/services/mock_upload_mode_store.dart';
 import 'package:pinpoint_capture/domain/services/queue_change_bus.dart';
+import 'package:pinpoint_capture/domain/services/sync_pause_store.dart';
 import 'package:pinpoint_capture/domain/services/sync_scheduler.dart';
 import 'package:pinpoint_capture/presentation/upload_manager/upload_manager_screen.dart';
 import 'package:pinpoint_capture/presentation/upload_manager/upload_queue_cubit.dart';
@@ -23,6 +24,8 @@ class MockConnectivity extends Mock implements ConnectivityService {}
 class MockScheduler extends Mock implements SyncScheduler {}
 
 class MockModeStore extends Mock implements MockUploadModeStore {}
+
+class MockPauseStore extends Mock implements SyncPauseStore {}
 
 class MockBus extends Mock implements QueueChangeBus {}
 
@@ -51,6 +54,7 @@ void main() {
   late MockConnectivity connectivity;
   late MockScheduler scheduler;
   late MockModeStore modeStore;
+  late MockPauseStore pauseStore;
   late MockBus bus;
   late MockImageStore imageStore;
   var rows = <PendingUpload>[];
@@ -67,6 +71,7 @@ void main() {
     connectivity = MockConnectivity();
     scheduler = MockScheduler();
     modeStore = MockModeStore();
+    pauseStore = MockPauseStore();
     bus = MockBus();
     imageStore = MockImageStore();
     when(() => queue.getAll()).thenAnswer((_) async => rows);
@@ -78,6 +83,8 @@ void main() {
     when(() => modeStore.read())
         .thenAnswer((_) async => MockUploadMode.success);
     when(() => modeStore.write(any())).thenAnswer((_) async {});
+    when(() => pauseStore.isPaused()).thenAnswer((_) async => false);
+    when(() => pauseStore.write(any())).thenAnswer((_) async {});
     when(() => scheduler.requestSync(immediate: any(named: 'immediate')))
         .thenAnswer((_) async {});
     when(() => imageStore.delete(any())).thenAnswer((_) async {});
@@ -93,6 +100,7 @@ void main() {
       connectivity: connectivity,
       scheduler: scheduler,
       modeStore: modeStore,
+      pauseStore: pauseStore,
       changeBus: bus,
       imageStore: imageStore,
     );

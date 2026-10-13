@@ -10,6 +10,7 @@ import 'package:pinpoint_capture/domain/services/camera_permission_service.dart'
 import 'package:pinpoint_capture/domain/services/camera_service.dart';
 import 'package:pinpoint_capture/domain/services/connectivity_service.dart';
 import 'package:pinpoint_capture/domain/services/mock_upload_mode_store.dart';
+import 'package:pinpoint_capture/domain/services/sync_pause_store.dart';
 import 'package:pinpoint_capture/domain/services/sync_scheduler.dart';
 
 /// Camera that "takes" a tiny file in [directory]. No hardware involved.
@@ -94,4 +95,14 @@ class InMemoryModeStore implements MockUploadModeStore {
 
   @override
   Future<void> write(MockUploadMode mode) async => this.mode = mode;
+}
+
+class InMemoryPauseStore implements SyncPauseStore {
+  bool paused = false;
+
+  @override
+  Future<bool> isPaused() async => paused;
+
+  @override
+  Future<void> write(bool paused) async => this.paused = paused;
 }
