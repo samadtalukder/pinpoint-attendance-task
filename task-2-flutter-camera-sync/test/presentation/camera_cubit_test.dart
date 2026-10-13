@@ -192,6 +192,28 @@ void main() {
     });
   });
 
+  test('a camera released while it was starting is not left open', () async {
+    final gate = Completer<ZoomCapabilities>();
+    when(() => camera.initialize(lens: any(named: 'lens')))
+        .thenAnswer((_) => gate.future);
+    final cubit = build();
+    addTearDown(cubit.close);
+
+    final starting = cubit.initialize();
+    await Future<void>.delayed(Duration.zero);
+    await cubit.onAppPaused();
+    gate.complete(caps);
+    await starting;
+
+    verify(() => camera.dispose()).called(1);
+    expect(cubit.state.status, CameraStatus.initializing);
+
+    when(() => camera.initialize(lens: any(named: 'lens')))
+        .thenAnswer((_) async => caps);
+    await cubit.onAppResumed();
+    expect(cubit.state.status, CameraStatus.ready);
+  });
+
   group('capture and queue', () {
     test('capture adds photos to the current batch', () async {
       final cubit = await ready();
@@ -214,6 +236,16 @@ void main() {
       expect(cubit.state.batch, [photo]);
       expect(cubit.state.feedback, CameraFeedback.captureFailed);
       expect(cubit.state.isCapturing, isFalse);
+    });
+
+    test('an unexpected capture error releases the shutter', () async {
+      final cubit = await ready();
+      when(() => camera.capture()).thenThrow(StateError('file system'));
+
+      await cubit.capture();
+
+      expect(cubit.state.isCapturing, isFalse);
+      expect(cubit.state.feedback, CameraFeedback.captureFailed);
     });
 
     test('queueBatch enqueues the photos and starts a fresh batch', () async {

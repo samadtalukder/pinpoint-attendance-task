@@ -52,6 +52,8 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
     final cubit = context.read<CameraCubit>();
     switch (state) {
       case AppLifecycleState.inactive:
+        // Transient (notification shade, system dialogs): keep the camera.
+        break;
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
       case AppLifecycleState.detached:

@@ -61,6 +61,12 @@ class CameraCubit extends Cubit<CameraState> {
   Future<CameraFailure?> _open() async {
     try {
       final capabilities = await _camera.initialize(lens: state.lens);
+      if (_released && !isClosed) {
+        // The app went to the background while the camera was starting. Give
+        // it back; onAppResumed restarts it.
+        await _camera.dispose();
+        return null;
+      }
       if (state.flashOn && state.hasFlash) await _camera.setFlash(true);
       if (isClosed) return null;
       emit(
@@ -74,6 +80,8 @@ class CameraCubit extends Cubit<CameraState> {
       return null;
     } on CameraFailure catch (failure) {
       return failure;
+    } catch (_) {
+      return const CameraFailure(CameraFailureType.unavailable);
     }
   }
 
@@ -162,7 +170,8 @@ class CameraCubit extends Cubit<CameraState> {
       final image = await _camera.capture();
       if (isClosed) return;
       emit(state.copyWith(batch: [...state.batch, image], isCapturing: false));
-    } on CameraFailure {
+    } catch (_) {
+      // Any failure (camera, file system) must release the shutter.
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -203,8 +212,9 @@ class CameraCubit extends Cubit<CameraState> {
   /// state leaves `ready` first so the preview widget is gone before the
   /// controller is disposed.
   Future<void> onAppPaused() async {
-    if (!state.isReady) return;
+    // Also remembered while the camera is still starting; see [_open].
     _released = true;
+    if (!state.isReady) return;
     emit(state.copyWith(status: CameraStatus.initializing));
     await _camera.dispose();
   }

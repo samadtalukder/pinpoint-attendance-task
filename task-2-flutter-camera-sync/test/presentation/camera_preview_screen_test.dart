@@ -354,7 +354,16 @@ void main() {
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     await tester.pump();
+    verifyNever(() => camera.dispose());
+    expect(find.byKey(const Key('preview')), findsOneWidget);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pump();
     verify(() => camera.dispose()).called(1);
+
+    // Frames are off while hidden; coming back goes through inactive.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
     expect(find.byKey(const Key('preview')), findsNothing);
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
