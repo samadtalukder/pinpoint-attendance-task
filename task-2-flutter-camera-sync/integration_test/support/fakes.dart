@@ -21,8 +21,15 @@ class FakeCameraService implements CameraService, CameraPreviewSource {
   int _shots = 0;
 
   @override
-  Future<ZoomCapabilities> initialize() async =>
-      const ZoomCapabilities(min: 0.5, max: 8);
+  bool get canFlip => true;
+
+  @override
+  Future<ZoomCapabilities> initialize({
+    CameraLens lens = CameraLens.back,
+  }) async => const ZoomCapabilities(min: 0.5, max: 8);
+
+  @override
+  Future<void> setFlash(bool on) async {}
 
   @override
   Future<void> setZoom(double zoom) async {}

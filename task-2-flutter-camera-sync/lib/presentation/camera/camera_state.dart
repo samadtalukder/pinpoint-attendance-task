@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import '../../core/constants.dart';
 import '../../domain/entities/captured_image.dart';
 import '../../domain/entities/zoom_capabilities.dart';
+import '../../domain/services/camera_service.dart';
 
 enum CameraStatus {
   initializing,
@@ -16,7 +17,13 @@ enum CameraStatus {
 }
 
 /// One-shot messages the screen turns into snackbars.
-enum CameraFeedback { none, captureFailed, queueFailed, batchQueued }
+enum CameraFeedback {
+  none,
+  captureFailed,
+  queueFailed,
+  batchQueued,
+  flipFailed,
+}
 
 /// Where the user last tapped to focus. A new [id] restarts the indicator
 /// animation even when the position is the same.
@@ -35,6 +42,9 @@ class CameraState extends Equatable {
   const CameraState({
     this.status = CameraStatus.initializing,
     this.capabilities,
+    this.lens = CameraLens.back,
+    this.flashOn = false,
+    this.canFlip = false,
     this.zoom = ZoomConstants.main,
     this.focus,
     this.batch = const [],
@@ -46,6 +56,11 @@ class CameraState extends Equatable {
 
   final CameraStatus status;
   final ZoomCapabilities? capabilities;
+  final CameraLens lens;
+
+  /// The user's flash choice. Only applied (and shown) on the back lens.
+  final bool flashOn;
+  final bool canFlip;
   final double zoom;
   final FocusTarget? focus;
 
@@ -59,12 +74,16 @@ class CameraState extends Equatable {
   final int lastQueuedCount;
 
   bool get isReady => status == CameraStatus.ready;
+  bool get hasFlash => lens == CameraLens.back;
   bool get canCapture => isReady && !isCapturing && !isQueueing;
   bool get canQueue => isReady && batch.isNotEmpty && !isQueueing;
 
   CameraState copyWith({
     CameraStatus? status,
     ZoomCapabilities? capabilities,
+    CameraLens? lens,
+    bool? flashOn,
+    bool? canFlip,
     double? zoom,
     FocusTarget? focus,
     List<CapturedImage>? batch,
@@ -76,6 +95,9 @@ class CameraState extends Equatable {
     return CameraState(
       status: status ?? this.status,
       capabilities: capabilities ?? this.capabilities,
+      lens: lens ?? this.lens,
+      flashOn: flashOn ?? this.flashOn,
+      canFlip: canFlip ?? this.canFlip,
       zoom: zoom ?? this.zoom,
       focus: focus ?? this.focus,
       batch: batch ?? this.batch,
@@ -90,6 +112,9 @@ class CameraState extends Equatable {
   List<Object?> get props => [
     status,
     capabilities,
+    lens,
+    flashOn,
+    canFlip,
     zoom,
     focus,
     batch,

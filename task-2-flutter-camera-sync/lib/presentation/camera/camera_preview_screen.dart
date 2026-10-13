@@ -121,6 +121,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
       CameraFeedback.batchQueued => AppStrings.batchQueued(
         state.lastQueuedCount,
       ),
+      CameraFeedback.flipFailed => AppStrings.flipFailed,
       CameraFeedback.none => null,
     };
     if (message != null) {

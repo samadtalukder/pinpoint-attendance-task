@@ -69,5 +69,12 @@ class UploadQueueState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [isLoading, items, isOnline, mode, isPaused, feedback];
+  List<Object?> get props => [
+    isLoading,
+    items,
+    isOnline,
+    mode,
+    isPaused,
+    feedback,
+  ];
 }

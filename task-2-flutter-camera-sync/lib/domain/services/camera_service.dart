@@ -20,12 +20,22 @@ class CameraFailure implements Exception {
       'CameraFailure($type${message == null ? '' : ': $message'})';
 }
 
-/// Back camera control. Throws [CameraFailure] when it cannot start or
+enum CameraLens { back, front }
+
+/// Camera control. Throws [CameraFailure] when it cannot start or
 /// capture; focus and zoom problems are not fatal and are swallowed.
 abstract interface class CameraService {
-  /// Starts the camera and reports its zoom range. Safe to call again after
-  /// [dispose].
-  Future<ZoomCapabilities> initialize();
+  /// Whether the device has both a back and a front camera. Valid after
+  /// [initialize].
+  bool get canFlip;
+
+  /// Starts the [lens] camera and reports its zoom range. Safe to call again
+  /// after [dispose].
+  Future<ZoomCapabilities> initialize({CameraLens lens = CameraLens.back});
+
+  /// Turns the capture flash on (fires with every photo) or off. Lenses
+  /// without a flash ignore it.
+  Future<void> setFlash(bool on);
 
   /// Zooms to [zoom]. Values below 1 select the ultrawide lens when the
   /// device has one.

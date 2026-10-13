@@ -45,26 +45,66 @@ class CameraCubit extends Cubit<CameraState> {
   }
 
   Future<void> _startCamera() async {
+    final failure = await _open();
+    if (failure == null || isClosed) return;
+    emit(
+      state.copyWith(
+        status: failure.type == CameraFailureType.noCamera
+            ? CameraStatus.noCamera
+            : CameraStatus.error,
+      ),
+    );
+  }
+
+  /// Starts the camera on the current lens. Emits `ready` and returns null on
+  /// success; returns the failure without emitting otherwise.
+  Future<CameraFailure?> _open() async {
     try {
-      final capabilities = await _camera.initialize();
-      if (isClosed) return;
+      final capabilities = await _camera.initialize(lens: state.lens);
+      if (state.flashOn && state.hasFlash) await _camera.setFlash(true);
+      if (isClosed) return null;
       emit(
         state.copyWith(
           status: CameraStatus.ready,
           capabilities: capabilities,
+          canFlip: _camera.canFlip,
           zoom: capabilities.clamp(ZoomConstants.main),
         ),
       );
+      return null;
     } on CameraFailure catch (failure) {
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          status: failure.type == CameraFailureType.noCamera
-              ? CameraStatus.noCamera
-              : CameraStatus.error,
-        ),
-      );
+      return failure;
     }
+  }
+
+  Future<void> toggleFlash() async {
+    if (!state.isReady || !state.hasFlash) return;
+    final on = !state.flashOn;
+    emit(state.copyWith(flashOn: on));
+    await _camera.setFlash(on);
+  }
+
+  /// Switches between back and front camera. The preview widget leaves the
+  /// tree first (status `initializing`), like on pause. If the other lens
+  /// cannot start, the previous one comes back.
+  Future<void> flipCamera() async {
+    if (!state.isReady || !state.canFlip) return;
+    final previous = state.lens;
+    final next = previous == CameraLens.back
+        ? CameraLens.front
+        : CameraLens.back;
+    emit(state.copyWith(status: CameraStatus.initializing, lens: next));
+    final failure = await _open();
+    if (failure == null || isClosed) return;
+    emit(state.copyWith(lens: previous));
+    final fallback = await _open();
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        status: fallback == null ? CameraStatus.ready : CameraStatus.error,
+        feedback: CameraFeedback.flipFailed,
+      ),
+    );
   }
 
   /// Slider and preset buttons.

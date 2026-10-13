@@ -36,7 +36,10 @@ void main() {
   late MockEnqueue enqueue;
   var capabilities = const ZoomCapabilities(min: 0.5, max: 8);
 
-  setUpAll(() => registerFallbackValue(<CapturedImage>[]));
+  setUpAll(() {
+    registerFallbackValue(<CapturedImage>[]);
+    registerFallbackValue(CameraLens.back);
+  });
 
   setUp(() {
     capabilities = const ZoomCapabilities(min: 0.5, max: 8);
@@ -46,11 +49,14 @@ void main() {
     when(() => permission.status())
         .thenAnswer((_) async => CameraPermission.granted);
     when(() => permission.openSettings()).thenAnswer((_) async {});
-    when(() => camera.initialize()).thenAnswer((_) async => capabilities);
+    when(() => camera.initialize(lens: any(named: 'lens')))
+        .thenAnswer((_) async => capabilities);
     when(() => camera.setZoom(any())).thenAnswer((_) async {});
     when(() => camera.focusAt(any(), any())).thenAnswer((_) async {});
     when(() => camera.capture()).thenAnswer((_) async => photo);
     when(() => camera.dispose()).thenAnswer((_) async {});
+    when(() => camera.setFlash(any())).thenAnswer((_) async {});
+    when(() => camera.canFlip).thenReturn(true);
   });
 
   Future<CameraCubit> pumpScreen(WidgetTester tester) async {
@@ -236,7 +242,7 @@ void main() {
   });
 
   testWidgets('no camera is explained', (tester) async {
-    when(() => camera.initialize())
+    when(() => camera.initialize(lens: any(named: 'lens')))
         .thenThrow(const CameraFailure(CameraFailureType.noCamera));
     await pumpScreen(tester);
 
@@ -244,12 +250,13 @@ void main() {
   });
 
   testWidgets('camera error offers Try again', (tester) async {
-    when(() => camera.initialize())
+    when(() => camera.initialize(lens: any(named: 'lens')))
         .thenThrow(const CameraFailure(CameraFailureType.unavailable));
     await pumpScreen(tester);
     expect(find.text(AppStrings.cameraErrorTitle), findsOneWidget);
 
-    when(() => camera.initialize()).thenAnswer((_) async => capabilities);
+    when(() => camera.initialize(lens: any(named: 'lens')))
+        .thenAnswer((_) async => capabilities);
     await tester.tap(find.text(AppStrings.tryAgain));
     await tester.pump();
     await tester.pump();
@@ -271,7 +278,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    verify(() => camera.initialize()).called(2);
+    verify(() => camera.initialize(lens: any(named: 'lens'))).called(2);
     expect(find.byKey(const Key('preview')), findsOneWidget);
   });
 }

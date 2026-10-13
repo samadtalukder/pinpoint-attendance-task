@@ -23,6 +23,8 @@ abstract final class AppStrings {
       : '$count photos queued for upload';
 
   static const String captureFailed = 'Could not take the photo. Try again.';
+  static const String flipFailed =
+      'Could not switch the camera. Staying on the current one.';
   static const String queueFailed =
       'Could not queue the batch. Your photos are kept, try again.';
 
