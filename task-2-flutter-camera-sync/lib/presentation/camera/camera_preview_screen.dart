@@ -78,36 +78,41 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
             fit: StackFit.expand,
             children: [
               Positioned.fill(child: _content(context, state, cubit)),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: Row(
-                    children: [
-                      CameraIconButton(
-                        icon: Icons.close,
-                        label: AppStrings.closeCamera,
-                        onPressed: widget.onClose,
-                      ),
-                      const Spacer(),
-                      if (state.isReady && state.hasFlash) ...[
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                    child: Row(
+                      children: [
                         CameraIconButton(
-                          icon: state.flashOn
-                              ? Icons.flash_on
-                              : Icons.flash_off,
-                          label: state.flashOn
-                              ? AppStrings.flashOn
-                              : AppStrings.flashOff,
-                          active: state.flashOn,
-                          onPressed: cubit.toggleFlash,
+                          icon: Icons.close,
+                          label: AppStrings.closeCamera,
+                          onPressed: widget.onClose,
                         ),
-                        const SizedBox(width: 8),
+                        const Spacer(),
+                        if (state.isReady && state.hasFlash) ...[
+                          CameraIconButton(
+                            icon: state.flashOn
+                                ? Icons.flash_on
+                                : Icons.flash_off,
+                            label: state.flashOn
+                                ? AppStrings.flashOn
+                                : AppStrings.flashOff,
+                            active: state.flashOn,
+                            onPressed: cubit.toggleFlash,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        CameraIconButton(
+                          icon: Icons.settings_outlined,
+                          label: AppStrings.cameraOptions,
+                          onPressed: widget.onOpenOptions,
+                        ),
                       ],
-                      CameraIconButton(
-                        icon: Icons.settings_outlined,
-                        label: AppStrings.cameraOptions,
-                        onPressed: widget.onOpenOptions,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
