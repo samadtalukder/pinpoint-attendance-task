@@ -206,17 +206,13 @@ void main() {
     expect(find.text(caps(AppStrings.pauseAll)), findsOneWidget);
   });
 
-  testWidgets('Pause all is disabled when nothing is pending', (tester) async {
-    rows = [upload(1, UploadStatus.synced)];
+  testWidgets('Pause all is hidden once everything is synced', (tester) async {
+    rows = [upload(1, UploadStatus.synced), upload(2, UploadStatus.synced)];
     await pumpScreen(tester);
 
-    final button = tester.widget<TextButton>(
-      find.ancestor(
-        of: find.text(caps(AppStrings.pauseAll)),
-        matching: find.byType(TextButton),
-      ),
-    );
-    expect(button.onPressed, isNull);
+    expect(find.text(caps(AppStrings.pauseAll)), findsNothing);
+    expect(find.text(caps(AppStrings.resumeAll)), findsNothing);
+    expect(find.text('100%'), findsOneWidget);
   });
 
   testWidgets('menu Retry now requests an immediate sync', (tester) async {

@@ -65,20 +65,24 @@ class SyncProgressHeader extends StatelessWidget {
                   style: theme.textTheme.bodySmall,
                 ),
               ),
-              TextButton.icon(
-                onPressed: !canToggle
-                    ? null
-                    : (state.isPaused ? onResume : onPause),
-                icon: Icon(
-                  state.isPaused ? Icons.play_arrow : Icons.pause,
-                  size: 18,
-                ),
-                label: Text(
-                  (state.isPaused ? AppStrings.resumeAll : AppStrings.pauseAll)
-                      .toUpperCase(),
-                  style: AppTheme.label(context),
-                ),
-              ),
+              if (canToggle)
+                TextButton.icon(
+                  onPressed: state.isPaused ? onResume : onPause,
+                  icon: Icon(
+                    state.isPaused ? Icons.play_arrow : Icons.pause,
+                    size: 18,
+                  ),
+                  label: Text(
+                    (state.isPaused
+                            ? AppStrings.resumeAll
+                            : AppStrings.pauseAll)
+                        .toUpperCase(),
+                    style: AppTheme.label(context),
+                  ),
+                )
+              else
+                // Keeps the row height stable when nothing is left to pause.
+                const SizedBox(height: kMinInteractiveDimension),
             ],
           ),
         ],
