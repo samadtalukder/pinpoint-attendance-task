@@ -306,8 +306,10 @@ void main() {
       await cubit.onAppResumed();
       await cubit.onAppResumed();
 
+      // status() cannot tell "denied" from "blocked" on Android, so resume
+      // must not overwrite what request() reported.
       verifyNever(() => permission.request());
-      expect(cubit.state.status, CameraStatus.permissionDenied);
+      expect(cubit.state.status, CameraStatus.permissionPermanentlyDenied);
     });
 
     test('close releases the camera', () async {

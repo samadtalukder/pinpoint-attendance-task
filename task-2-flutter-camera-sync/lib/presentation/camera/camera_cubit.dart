@@ -172,15 +172,19 @@ class CameraCubit extends Cubit<CameraState> {
   /// Restarts a released camera, and re-checks after a failure, e.g. the
   /// user granted the permission in system settings.
   Future<void> onAppResumed() async {
-    final retryable =
-        _released ||
-        switch (state.status) {
-          CameraStatus.permissionDenied ||
-          CameraStatus.permissionPermanentlyDenied ||
-          CameraStatus.error => true,
-          _ => false,
-        };
-    if (retryable) await initialize(promptForPermission: false);
+    switch (state.status) {
+      case CameraStatus.permissionDenied:
+      case CameraStatus.permissionPermanentlyDenied:
+        // status() cannot tell "denied" from "blocked" on Android, so it may
+        // only upgrade to granted, never overwrite what request() reported.
+        if (await _permission.status() == CameraPermission.granted) {
+          await initialize(promptForPermission: false);
+        }
+      case CameraStatus.error:
+        await initialize(promptForPermission: false);
+      default:
+        if (_released) await initialize(promptForPermission: false);
+    }
   }
 
   Future<void> openSettings() => _permission.openSettings();
