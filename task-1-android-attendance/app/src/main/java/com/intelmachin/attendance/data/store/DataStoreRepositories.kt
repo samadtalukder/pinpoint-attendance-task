@@ -4,20 +4,27 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import com.intelmachin.attendance.domain.model.CheckIn
 import com.intelmachin.attendance.domain.model.GeoPoint
 import com.intelmachin.attendance.domain.repository.CheckInRepository
 import com.intelmachin.attendance.domain.repository.OfficeRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
+
+/** A corrupt or unreadable file reads as "nothing saved" instead of crashing the collector. */
+private val DataStore<Preferences>.safeData: Flow<Preferences>
+    get() = data.catch { if (it is IOException) emit(emptyPreferences()) else throw it }
 
 class DataStoreOfficeRepository @Inject constructor(
     private val store: DataStore<Preferences>,
 ) : OfficeRepository {
 
-    override val office: Flow<GeoPoint?> = store.data.map { prefs ->
+    override val office: Flow<GeoPoint?> = store.safeData.map { prefs ->
         val lat = prefs[LATITUDE]
         val lon = prefs[LONGITUDE]
         if (lat != null && lon != null) GeoPoint(lat, lon) else null
@@ -40,7 +47,7 @@ class DataStoreCheckInRepository @Inject constructor(
     private val store: DataStore<Preferences>,
 ) : CheckInRepository {
 
-    override val lastCheckIn: Flow<CheckIn?> = store.data.map { prefs ->
+    override val lastCheckIn: Flow<CheckIn?> = store.safeData.map { prefs ->
         prefs[LAST_CHECK_IN]?.let(::CheckIn)
     }
 

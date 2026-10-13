@@ -59,7 +59,10 @@ class FusedLocationRepository @Inject constructor(
             locationEnabled().flatMapLatest { enabled ->
                 if (enabled) fixes().map<LocationFix, LocationStatus> { LocationStatus.Available(it) }
                     .onStart { emit(LocationStatus.Searching) }
-                    .catch { if (it is SecurityException) emit(LocationStatus.PermissionDenied) else throw it }
+                    .catch {
+                        // Updates can fail when location settings are not satisfied; offer "Enable GPS".
+                        emit(if (it is SecurityException) LocationStatus.PermissionDenied else LocationStatus.GpsOff)
+                    }
                 else flowOf(LocationStatus.GpsOff)
             }
         }
@@ -112,12 +115,14 @@ class FusedLocationRepository @Inject constructor(
         }
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL_MS).build()
         client.requestLocationUpdates(request, callback, Looper.getMainLooper())
+            .addOnFailureListener { close(it) }
         awaitClose { client.removeLocationUpdates(callback) }
     }
 
     private fun Location.toFix() = LocationFix(
         point = GeoPoint(latitude, longitude),
-        accuracyMeters = accuracy,
+        // getAccuracy() is 0 when the fix carries none; unknown accuracy must fail the accuracy rule.
+        accuracyMeters = if (hasAccuracy()) accuracy else Float.MAX_VALUE,
         timeMillis = time,
         isMock = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) isMock else @Suppress("DEPRECATION") isFromMockProvider,
     )
