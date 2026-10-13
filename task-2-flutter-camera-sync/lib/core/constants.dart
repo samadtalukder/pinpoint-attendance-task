@@ -15,6 +15,10 @@ abstract final class SyncConstants {
   /// Worker backoff: workmanager doubles the delay after each failed run.
   static const Duration initialBackoff = Duration(seconds: 10);
 
+  /// A run gives up after this many failures in a row (dead connection), but
+  /// keeps going past a single bad image so it cannot block the rest.
+  static const int maxConsecutiveFailures = 3;
+
   static const Duration mockLatency = Duration(milliseconds: 800);
 
   /// Longer than [uploadTimeout], so "slow" mode always times out.

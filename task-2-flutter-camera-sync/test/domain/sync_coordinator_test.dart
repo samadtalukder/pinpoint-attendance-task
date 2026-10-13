@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:pinpoint_capture/domain/entities/pending_upload.dart';
-import 'package:pinpoint_capture/domain/entities/upload_status.dart';
 import 'package:pinpoint_capture/domain/repositories/upload_queue_repository.dart';
 import 'package:pinpoint_capture/domain/services/connectivity_service.dart';
 import 'package:pinpoint_capture/domain/services/sync_scheduler.dart';
@@ -36,23 +34,10 @@ void main() {
   late SyncCoordinator coordinator;
   var hasPending = false;
 
-  final pendingItem = PendingUpload(
-    id: 1,
-    batchId: 1,
-    filePath: '/img/a',
-    fileName: 'a',
-    sizeBytes: 1,
-    status: UploadStatus.waiting,
-    attempts: 0,
-    createdAt: DateTime(2026, 10, 12),
-  );
-
   setUp(() {
     hasPending = false;
     queue = MockQueue();
-    when(() => queue.getUnsynced()).thenAnswer(
-      (_) async => hasPending ? [pendingItem] : const <PendingUpload>[],
-    );
+    when(() => queue.hasUnsynced()).thenAnswer((_) async => hasPending);
     connectivity = FakeConnectivity();
     scheduler = RecordingScheduler();
     coordinator = SyncCoordinator(queue, connectivity, scheduler);
@@ -105,4 +90,18 @@ void main() {
     await pump();
     expect(scheduler.requests, [false]);
   });
+
+  test('a scheduling failure at start does not throw', () async {
+    hasPending = true;
+    final failing = SyncCoordinator(queue, connectivity, _ThrowingScheduler());
+    addTearDown(failing.dispose);
+
+    await failing.start();
+  });
+}
+
+class _ThrowingScheduler implements SyncScheduler {
+  @override
+  Future<void> requestSync({bool immediate = false}) =>
+      Future.error(StateError('workmanager'));
 }

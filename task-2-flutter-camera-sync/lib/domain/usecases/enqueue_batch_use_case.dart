@@ -24,11 +24,17 @@ class EnqueueBatchUseCase {
       }
       batch = await _queue.enqueueBatch(stored);
     } catch (_) {
-      // Do not leave orphaned files; the caller keeps the photos and can retry.
+      // Do not leave orphaned copies. The source photos are untouched, so the
+      // caller keeps them and can retry.
       for (final item in stored) {
         await _store.delete(item.filePath);
       }
       rethrow;
+    }
+
+    // Only now that the batch is committed are the originals redundant.
+    for (final image in images) {
+      await _store.delete(image.path);
     }
 
     try {

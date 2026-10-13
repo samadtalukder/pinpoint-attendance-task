@@ -54,7 +54,8 @@ class PinpointApp extends StatelessWidget {
             scheduler: dependencies.scheduler,
             pauseStore: dependencies.pauseStore,
             changeBus: dependencies.changeBus,
-            imageStore: dependencies.imageStore,
+            clearSynced: dependencies.clearSynced,
+            addSampleBatch: dependencies.addSampleBatch,
           )..initialize(),
           child: UploadManagerScreen(
             onStartNewBatch: () => Navigator.of(routeContext).pop(),

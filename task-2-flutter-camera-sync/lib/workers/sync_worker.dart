@@ -12,8 +12,8 @@ void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
     if (taskName != SyncConstants.syncTaskName) return true;
     try {
-      final deps = await AppDependencies.create();
-      final result = await deps.processUploadQueue();
+      final processUploadQueue = await AppDependencies.createUploadProcessor();
+      final result = await processUploadQueue();
       // false asks the OS to retry with the exponential backoff set when
       // the work was scheduled.
       return result != SyncResult.failed;

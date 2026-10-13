@@ -19,7 +19,7 @@ class SyncCoordinator {
   Future<void> start() async {
     if (_subscription != null) return;
     _subscription = _connectivity.onlineChanges.listen(_onOnlineChanged);
-    if (await _hasPending()) await _scheduler.requestSync();
+    if (await _queue.hasUnsynced()) await _requestSync();
   }
 
   Future<void> dispose() async {
@@ -28,10 +28,16 @@ class SyncCoordinator {
   }
 
   Future<void> _onOnlineChanged(bool online) async {
-    if (online && await _hasPending()) {
-      await _scheduler.requestSync(immediate: true);
+    if (online && await _queue.hasUnsynced()) {
+      await _requestSync(immediate: true);
     }
   }
 
-  Future<bool> _hasPending() async => (await _queue.getUnsynced()).isNotEmpty;
+  /// A scheduling failure must not break app start or surface as an
+  /// unhandled error; the next start or network change tries again.
+  Future<void> _requestSync({bool immediate = false}) async {
+    try {
+      await _scheduler.requestSync(immediate: immediate);
+    } catch (_) {}
+  }
 }

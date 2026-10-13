@@ -13,6 +13,8 @@ import 'package:pinpoint_capture/domain/services/image_store.dart';
 import 'package:pinpoint_capture/domain/services/queue_change_bus.dart';
 import 'package:pinpoint_capture/domain/services/sync_pause_store.dart';
 import 'package:pinpoint_capture/domain/services/sync_scheduler.dart';
+import 'package:pinpoint_capture/domain/usecases/add_sample_batch_use_case.dart';
+import 'package:pinpoint_capture/domain/usecases/clear_synced_use_case.dart';
 import 'package:pinpoint_capture/presentation/upload_manager/upload_queue_cubit.dart';
 import 'package:pinpoint_capture/presentation/upload_manager/upload_queue_state.dart';
 
@@ -88,7 +90,8 @@ void main() {
       scheduler: scheduler,
       pauseStore: pauseStore,
       changeBus: bus,
-      imageStore: imageStore,
+      clearSynced: ClearSyncedUseCase(queue, imageStore),
+      addSampleBatch: AddSampleBatchUseCase(queue, scheduler),
     );
     addTearDown(cubit.close);
     await cubit.initialize();

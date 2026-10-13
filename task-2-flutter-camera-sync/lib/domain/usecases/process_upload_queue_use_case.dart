@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../core/constants.dart';
+import '../entities/pending_upload.dart';
 import '../repositories/upload_queue_repository.dart';
 import '../services/queue_change_bus.dart';
 import '../services/sync_pause_store.dart';
@@ -13,17 +14,19 @@ enum SyncResult {
   /// Every queued image was uploaded.
   completed,
 
-  /// An upload failed; remaining images stay queued for a retry.
+  /// An upload failed; failed and unattempted images stay queued for a retry.
   failed,
 
   /// The user paused syncing; remaining images stay queued untouched.
   paused,
 }
 
-/// Uploads the queue oldest first. Stops at the first failure so a dead
-/// connection is not hammered; failed and untouched rows stay queued. Checks
-/// the pause flag before every image, so pausing takes effect after the
-/// upload in flight.
+/// Uploads the queue oldest first. One failing image does not block the ones
+/// behind it; the run stops after [SyncConstants.maxConsecutiveFailures]
+/// failures in a row so a dead connection is not hammered. Failed and
+/// untouched rows stay queued. Images queued while the run is in progress are
+/// picked up by the same run. Checks the pause flag before every image, so
+/// pausing takes effect after the upload in flight.
 class ProcessUploadQueueUseCase {
   ProcessUploadQueueUseCase(
     this._queue,
@@ -50,32 +53,57 @@ class ProcessUploadQueueUseCase {
     // uploader, so anything still `uploading` here is stale.
     if (await _queue.resetInterrupted() > 0) _changeBus?.notify();
 
-    final pending = await _queue.getUnsynced();
-    if (pending.isEmpty) return SyncResult.idle;
+    // Rows tried in this run are not retried until the next run.
+    final attempted = <int>{};
+    var failedInARow = 0;
+    var anyFailed = false;
 
-    for (final item in pending) {
-      if (await _pauseStore.isPaused()) return SyncResult.paused;
-      await _queue.markUploading(item.id);
-      _changeBus?.notify();
-      try {
-        await _api.upload(item).timeout(_timeout);
-        await _queue.markSynced(item.id);
+    while (true) {
+      // Re-read the queue so batches added mid-run are not left waiting for a
+      // sync request that a running job would ignore.
+      final pending = (await _queue.getUnsynced())
+          .where((item) => !attempted.contains(item.id))
+          .toList();
+      if (pending.isEmpty) break;
+
+      for (final item in pending) {
+        if (await _pauseStore.isPaused()) return SyncResult.paused;
+        attempted.add(item.id);
+        await _queue.markUploading(item.id);
         _changeBus?.notify();
-      } on TimeoutException {
-        await _queue.markFailed(item.id, slowConnectionMessage);
+
+        final error = await _upload(item);
+        if (error == null) {
+          await _queue.markSynced(item.id);
+          failedInARow = 0;
+        } else {
+          await _queue.markFailed(item.id, error);
+          anyFailed = true;
+          if (++failedInARow >= SyncConstants.maxConsecutiveFailures) {
+            _changeBus?.notify();
+            return SyncResult.failed;
+          }
+        }
         _changeBus?.notify();
-        return SyncResult.failed;
-      } on UploadException catch (e) {
-        await _queue.markFailed(item.id, e.message);
-        _changeBus?.notify();
-        return SyncResult.failed;
-      } catch (_) {
-        // Never let an unexpected error crash the worker; keep the row queued.
-        await _queue.markFailed(item.id, unexpectedErrorMessage);
-        _changeBus?.notify();
-        return SyncResult.failed;
       }
     }
-    return SyncResult.completed;
+
+    if (attempted.isEmpty) return SyncResult.idle;
+    return anyFailed ? SyncResult.failed : SyncResult.completed;
+  }
+
+  /// Returns null on success, otherwise the message to store on the row.
+  /// Never throws, so an unexpected error cannot crash the worker.
+  Future<String?> _upload(PendingUpload item) async {
+    try {
+      await _api.upload(item).timeout(_timeout);
+      return null;
+    } on TimeoutException {
+      return slowConnectionMessage;
+    } on UploadException catch (e) {
+      return e.message;
+    } catch (_) {
+      return unexpectedErrorMessage;
+    }
   }
 }

@@ -56,6 +56,18 @@ class SqfliteUploadQueueRepository implements UploadQueueRepository {
   }
 
   @override
+  Future<bool> hasUnsynced() async {
+    final rows = await _db.query(
+      _uploads,
+      columns: ['id'],
+      where: 'status != ?',
+      whereArgs: [UploadStatus.synced.name],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
+  }
+
+  @override
   Future<void> markUploading(int id) =>
       _update(id, {'status': UploadStatus.uploading.name});
 

@@ -2,14 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants.dart';
-import '../../domain/entities/new_upload.dart';
 import '../../domain/repositories/upload_queue_repository.dart';
 import '../../domain/services/connectivity_service.dart';
-import '../../domain/services/image_store.dart';
 import '../../domain/services/queue_change_bus.dart';
 import '../../domain/services/sync_pause_store.dart';
 import '../../domain/services/sync_scheduler.dart';
+import '../../domain/usecases/add_sample_batch_use_case.dart';
+import '../../domain/usecases/clear_synced_use_case.dart';
 import 'upload_queue_state.dart';
 
 class UploadQueueCubit extends Cubit<UploadQueueState> {
@@ -19,7 +18,8 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
     required this._scheduler,
     required this._pauseStore,
     required this._changeBus,
-    required this._imageStore,
+    required this._clearSynced,
+    required this._addSampleBatch,
   }) : super(const UploadQueueState());
 
   final UploadQueueRepository _queue;
@@ -27,7 +27,8 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
   final SyncScheduler _scheduler;
   final SyncPauseStore _pauseStore;
   final QueueChangeBus _changeBus;
-  final ImageStore _imageStore;
+  final ClearSyncedUseCase _clearSynced;
+  final AddSampleBatchUseCase _addSampleBatch;
 
   StreamSubscription<void>? _changes;
   StreamSubscription<bool>? _online;
@@ -51,9 +52,26 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
     );
   }
 
+  bool _reloading = false;
+  bool _reloadQueued = false;
+
+  /// Worker progress arrives in bursts. Changes that land while a load is
+  /// running share one follow-up load instead of one query each.
   Future<void> _reload() async {
-    final items = await _queue.getAll();
-    if (!isClosed) emit(state.copyWith(isLoading: false, items: items));
+    if (_reloading) {
+      _reloadQueued = true;
+      return;
+    }
+    _reloading = true;
+    try {
+      do {
+        _reloadQueued = false;
+        final items = await _queue.getAll();
+        if (!isClosed) emit(state.copyWith(isLoading: false, items: items));
+      } while (_reloadQueued && !isClosed);
+    } finally {
+      _reloading = false;
+    }
   }
 
   /// Runs the worker now instead of waiting out its backoff.
@@ -75,25 +93,13 @@ class UploadQueueCubit extends Cubit<UploadQueueState> {
   }, UploadQueueFeedback.none);
 
   Future<void> clearSynced() => _run(() async {
-    final paths = await _queue.clearSynced();
-    for (final path in paths) {
-      await _imageStore.delete(path);
-    }
+    await _clearSynced();
     await _reload();
   }, UploadQueueFeedback.cleared);
 
   Future<void> addSampleBatch() => _run(() async {
-    await _queue.enqueueBatch([
-      for (var i = 1; i <= SampleConstants.imageCount; i++)
-        NewUpload(
-          filePath:
-              '${SampleConstants.pathPrefix}${SampleConstants.namePrefix}$i.jpg',
-          fileName: '${SampleConstants.namePrefix}$i.jpg',
-          sizeBytes: SampleConstants.imageSizeBytes,
-        ),
-    ]);
+    await _addSampleBatch();
     await _reload();
-    await _scheduler.requestSync();
   }, UploadQueueFeedback.sampleAdded);
 
   void feedbackShown() =>

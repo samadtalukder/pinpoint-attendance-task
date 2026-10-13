@@ -30,20 +30,23 @@ void main() {
     return CapturedImage(path: file.path, name: name, sizeBytes: 4);
   }
 
-  test('persist moves the file into app storage', () async {
-    final image = await photo('a.jpg');
+  test(
+    'persist copies the file into app storage and keeps the original',
+    () async {
+      final image = await photo('a.jpg');
 
-    final stored = await store.persist(image);
+      final stored = await store.persist(image);
 
-    expect(stored.fileName, 'IMG_20261012_090503.jpg');
-    expect(stored.sizeBytes, 4);
-    expect(
-      p.dirname(stored.filePath),
-      p.join(root.path, StorageConstants.capturesDirectory),
-    );
-    expect(File(stored.filePath).existsSync(), isTrue);
-    expect(File(image.path).existsSync(), isFalse);
-  });
+      expect(stored.fileName, 'IMG_20261012_090503.jpg');
+      expect(stored.sizeBytes, 4);
+      expect(
+        p.dirname(stored.filePath),
+        p.join(root.path, StorageConstants.capturesDirectory),
+      );
+      expect(File(stored.filePath).existsSync(), isTrue);
+      expect(File(image.path).existsSync(), isTrue);
+    },
+  );
 
   test('photos taken in the same second get a numeric suffix', () async {
     final first = await store.persist(await photo('a.jpg'));

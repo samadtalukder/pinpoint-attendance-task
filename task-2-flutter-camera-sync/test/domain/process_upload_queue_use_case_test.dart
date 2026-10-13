@@ -99,23 +99,46 @@ void main() {
   });
 
   test(
-    'failure keeps the failed image and the rest queued, in order',
+    'a failing image stays queued as retrying and does not block the rest',
     () async {
       await enqueue(['a', 'b', 'c']);
       api.failures['b'] = const UploadException('No internet connection');
 
       expect(await process(), SyncResult.failed);
 
-      expect(api.uploaded, ['a']);
+      expect(api.uploaded, ['a', 'c']);
       final left = await repo.getUnsynced();
-      expect(left.map((u) => u.fileName), ['b', 'c']);
-      expect(left[0].status, UploadStatus.retrying);
-      expect(left[0].attempts, 1);
-      expect(left[0].lastError, 'No internet connection');
-      expect(left[1].status, UploadStatus.waiting);
-      expect(left[1].attempts, 0);
+      expect(left.map((u) => u.fileName), ['b']);
+      expect(left.single.status, UploadStatus.retrying);
+      expect(left.single.attempts, 1);
+      expect(left.single.lastError, 'No internet connection');
     },
   );
+
+  test('stops after the allowed number of failures in a row', () async {
+    await enqueue(['a', 'b', 'c', 'd', 'e']);
+    for (final n in ['a', 'b', 'c', 'd', 'e']) {
+      api.failures[n] = const UploadException('offline');
+    }
+
+    expect(await process(), SyncResult.failed);
+
+    final left = await repo.getUnsynced();
+    expect(left.map((u) => u.attempts), [1, 1, 1, 0, 0]);
+    expect(left[3].status, UploadStatus.waiting);
+  });
+
+  test('images queued during a run are uploaded by the same run', () async {
+    await enqueue(['a']);
+    api.onUpload = (name) {
+      if (name == 'a') enqueue(['late']);
+    };
+
+    expect(await process(), SyncResult.completed);
+
+    expect(api.uploaded, ['a', 'late']);
+    expect(await repo.getUnsynced(), isEmpty);
+  });
 
   test('timeout counts as a slow-connection failure', () async {
     await enqueue(['a']);
@@ -146,7 +169,7 @@ void main() {
     api.failures.clear();
     expect(await process(), SyncResult.completed);
 
-    expect(api.uploaded, ['a', 'b']);
+    expect(api.uploaded, ['b', 'a']);
     expect(await repo.getUnsynced(), isEmpty);
     expect((await repo.getAll()).length, 2);
   });

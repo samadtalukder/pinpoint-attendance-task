@@ -22,6 +22,8 @@ import '../domain/services/queue_change_bus.dart';
 import '../domain/services/sync_pause_store.dart';
 import '../domain/services/sync_scheduler.dart';
 import '../domain/services/upload_api.dart';
+import '../domain/usecases/add_sample_batch_use_case.dart';
+import '../domain/usecases/clear_synced_use_case.dart';
 import '../domain/usecases/enqueue_batch_use_case.dart';
 import '../domain/usecases/process_upload_queue_use_case.dart';
 import '../domain/usecases/sync_coordinator.dart';
@@ -43,6 +45,8 @@ class AppDependencies {
     required this.cameraPermission,
     required this.imageStore,
   }) : enqueueBatch = EnqueueBatchUseCase(imageStore, queue, scheduler),
+       clearSynced = ClearSyncedUseCase(queue, imageStore),
+       addSampleBatch = AddSampleBatchUseCase(queue, scheduler),
        processUploadQueue = ProcessUploadQueueUseCase(
          queue,
          uploadApi,
@@ -63,8 +67,21 @@ class AppDependencies {
   final CameraPermissionService cameraPermission;
   final ImageStore imageStore;
   final EnqueueBatchUseCase enqueueBatch;
+  final ClearSyncedUseCase clearSynced;
+  final AddSampleBatchUseCase addSampleBatch;
   final ProcessUploadQueueUseCase processUploadQueue;
   final SyncCoordinator syncCoordinator;
+
+  /// Worker wiring: only what uploading needs, none of the UI-side plugins.
+  static Future<ProcessUploadQueueUseCase> createUploadProcessor() async {
+    final db = await AppDatabase.open();
+    return ProcessUploadQueueUseCase(
+      SqfliteUploadQueueRepository(db),
+      MockUploadApi(SharedPrefsMockUploadModeStore()),
+      pauseStore: SharedPrefsSyncPauseStore(),
+      changeBus: IsolateQueueChangeBus(),
+    );
+  }
 
   /// The database is deliberately never closed: when the worker runs inside
   /// the UI engine, sqflite hands out the same connection to both.

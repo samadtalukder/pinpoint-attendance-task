@@ -13,6 +13,10 @@ abstract interface class UploadQueueRepository {
   /// Images still to upload, oldest first.
   Future<List<PendingUpload>> getUnsynced();
 
+  /// True when at least one image is not synced yet. Cheaper than loading the
+  /// rows with [getUnsynced].
+  Future<bool> hasUnsynced();
+
   Future<void> markUploading(int id);
 
   Future<void> markSynced(int id);
