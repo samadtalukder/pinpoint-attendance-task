@@ -8,7 +8,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +21,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,14 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.location.Priority
 import com.intelmachin.attendance.R
-
-private const val GPS_PROBE_INTERVAL_MS = 2_000L
 
 /** Stateful host: owns Android plumbing (permission dialog, GPS prompt, settings intents). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,15 +63,16 @@ fun AttendanceScreen(
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
         )
     }
-    val gpsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult(),
-    ) { viewModel.onScreenResumed() }
 
-    // Ask once on entry; Android answers instantly if the user already blocked the prompt.
+    // Ask once per task, not on every recreation (rotation); the banner button asks again on demand.
+    var permissionAsked by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
-        if (!granted) requestPermission()
+        if (!granted && !permissionAsked) {
+            permissionAsked = true
+            requestPermission()
+        }
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onScreenResumed() }
 
@@ -112,30 +108,14 @@ fun AttendanceScreen(
             onMarkAttendance = viewModel::onMarkAttendance,
             onGrantPermission = { requestPermission() },
             onOpenSettings = { context.openAppSettings() },
-            onEnableGps = { promptEnableGps(context, gpsLauncher::launch, viewModel::onScreenResumed) },
+            onEnableGps = { context.openLocationSettings() },
             modifier = Modifier.padding(padding),
         )
     }
 }
 
-private fun promptEnableGps(
-    context: Context,
-    launchResolution: (IntentSenderRequest) -> Unit,
-    onAlreadyOn: () -> Unit,
-) {
-    val request = LocationSettingsRequest.Builder()
-        .addLocationRequest(LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, GPS_PROBE_INTERVAL_MS).build())
-        .setAlwaysShow(true)
-        .build()
-    LocationServices.getSettingsClient(context).checkLocationSettings(request)
-        .addOnSuccessListener { onAlreadyOn() }
-        .addOnFailureListener { error ->
-            if (error is ResolvableApiException) {
-                launchResolution(IntentSenderRequest.Builder(error.resolution).build())
-            } else {
-                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
-        }
+private fun Context.openLocationSettings() {
+    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 private fun Context.openAppSettings() {

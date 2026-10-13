@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -51,8 +52,15 @@ class AttendanceViewModel @Inject constructor(
         }
     }
 
+    /** A blocked flag only makes sense while permission is missing; clear it once access is granted. */
+    private val locationStatus = location.status.onEach { status ->
+        if (status !is LocationStatus.PermissionDenied && local.value.permissionPermanentlyDenied) {
+            local.update { it.copy(permissionPermanentlyDenied = false) }
+        }
+    }
+
     val uiState: StateFlow<AttendanceUiState> = combine(
-        location.status, office.office, checkIns.lastCheckIn, local, clockTick,
+        locationStatus, office.office, checkIns.lastCheckIn, local, clockTick,
     ) { status, officePoint, lastCheckIn, local, _ ->
         val fix = (status as? LocationStatus.Available)?.fix
         val check = evaluate(fix, officePoint, lastCheckIn)
@@ -76,7 +84,7 @@ class AttendanceViewModel @Inject constructor(
             isMarking = local.isMarking,
             message = local.message,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AttendanceUiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AttendanceUiState(isLoading = true))
 
     /** Call after the runtime permission dialog closes. */
     fun onPermissionResult(granted: Boolean, canRequestAgain: Boolean) {

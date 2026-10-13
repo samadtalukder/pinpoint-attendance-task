@@ -45,7 +45,8 @@
 
     <!-- Status banners -->
     <string name="permission_denied_title">Location permission needed</string>
-    <string name="permission_denied_body">Allow location access so we can measure your distance from the office.</string>
+    <string name="permission_denied_body">Allow precise location access so we can measure your distance from the office.</string>
+    <string name="loading_description">Loading attendance</string>
     <string name="action_grant_permission">Grant permission</string>
     <string name="permission_blocked_title">Location permission is blocked</string>
     <string name="permission_blocked_body">Android will not ask again. Enable Location for this app in Settings.</string>

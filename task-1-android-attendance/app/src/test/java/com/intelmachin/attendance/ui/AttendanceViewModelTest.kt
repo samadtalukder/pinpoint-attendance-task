@@ -72,6 +72,18 @@ class AttendanceViewModelTest {
     }
 
     @Test
+    fun `permanently denied flag clears once permission is granted`() = runTest {
+        val vm = viewModel()
+        val s = state(vm)
+        location.emit(LocationStatus.PermissionDenied)
+        vm.onPermissionResult(granted = false, canRequestAgain = false)
+        assertEquals(LocationAvailability.PermissionPermanentlyDenied, s().availability)
+        location.emit(LocationStatus.Searching)
+        location.emit(LocationStatus.PermissionDenied)
+        assertEquals(LocationAvailability.PermissionDenied, s().availability)
+    }
+
+    @Test
     fun `permission denied then permanently denied`() = runTest {
         val vm = viewModel()
         val s = state(vm)

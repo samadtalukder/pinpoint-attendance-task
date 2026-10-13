@@ -17,6 +17,8 @@ enum class AttendanceMessage {
 }
 
 data class AttendanceUiState(
+    /** True until the first combined emission, so saved office data is not shown as missing. */
+    val isLoading: Boolean = false,
     val availability: LocationAvailability = LocationAvailability.Searching,
     val office: GeoPoint? = null,
     val distanceMeters: Double? = null,
