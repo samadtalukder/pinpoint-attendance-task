@@ -27,7 +27,7 @@ class PinpointApp extends StatelessWidget {
           dependencies.camera,
           dependencies.cameraPermission,
           dependencies.enqueueBatch,
-        )..initialize(),
+        )..initialize(promptForPermission: false),
         child: Builder(
           builder: (context) => CameraPreviewScreen(
             previewSource: dependencies.cameraPreview,

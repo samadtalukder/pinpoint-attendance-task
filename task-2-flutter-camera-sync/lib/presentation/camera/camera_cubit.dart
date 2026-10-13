@@ -22,9 +22,10 @@ class CameraCubit extends Cubit<CameraState> {
   int _focusCounter = 0;
   bool _released = false;
 
-  /// [promptForPermission] is false for lifecycle restarts: the system
-  /// permission dialog itself pauses and resumes the app, so prompting from a
-  /// resume would loop.
+  /// [promptForPermission] is false for the first open and for lifecycle
+  /// restarts. On first open the screen explains why the camera is needed and
+  /// its button asks. On resume, the system dialog itself pauses and resumes
+  /// the app, so prompting there would loop.
   Future<void> initialize({bool promptForPermission = true}) async {
     _released = false;
     emit(state.copyWith(status: CameraStatus.initializing));

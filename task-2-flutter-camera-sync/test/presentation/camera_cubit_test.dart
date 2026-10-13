@@ -90,6 +90,18 @@ void main() {
     );
 
     blocTest<CameraCubit, CameraState>(
+      'denied permission shows the explanation without prompting when asked not to',
+      setUp: () => when(() => permission.status())
+          .thenAnswer((_) async => CameraPermission.denied),
+      build: build,
+      act: (c) => c.initialize(promptForPermission: false),
+      verify: (c) {
+        expect(c.state.status, CameraStatus.permissionDenied);
+        verifyNever(() => permission.request());
+      },
+    );
+
+    blocTest<CameraCubit, CameraState>(
       'permanently denied skips the prompt',
       setUp: () =>
           when(() => permission.status())

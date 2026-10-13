@@ -100,9 +100,9 @@ void main() {
       );
       expect(
         find.text(AppStrings.statusRetrying(1).toUpperCase()),
-        findsOneWidget,
+        findsNWidgets(2), // one status per queued photo
       );
-      expect(find.text('No internet connection'), findsOneWidget);
+      expect(find.text('No internet connection'), findsNWidgets(2));
       expect(find.text(AppStrings.statusSynced.toUpperCase()), findsNothing);
 
       // Pause all: the worker leaves the queue alone.
