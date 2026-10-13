@@ -1,4 +1,4 @@
-# Prompt log (curated version is PROMPTS.md)
+# Prompt log
 PROMPTS.raw.md
 
 # Signing and secrets
@@ -31,3 +31,6 @@ captures/
 
 # Assessment brief (local reference only)
 assessment-brief.pdf
+
+# Agent instructions (local only)
+CLAUDE.md
