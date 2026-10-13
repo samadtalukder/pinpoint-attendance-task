@@ -49,7 +49,8 @@ abstract final class AppStrings {
   static const String pendingUploadsHeader = 'Pending uploads';
   static const String syncedHeader = 'Synced';
   static const String batchSyncProgress = 'Batch sync progress';
-  static const String online = 'Online';
+  static const String uploadedSuffix = 'Uploaded';
+  static const String online = 'Stable link';
   static const String offline = 'Offline';
   static const String retryNow = 'Retry now';
   static const String startNewBatch = 'Start new upload batch';
@@ -67,15 +68,17 @@ abstract final class AppStrings {
   static const String loadingQueue = 'Loading uploads…';
 
   static const String statusWaitingOffline = 'Waiting for connection';
-  static const String statusWaiting = 'Waiting to upload';
+  static const String statusWaiting = 'In queue';
+  static const String statusPaused = 'Paused';
+  static const String pauseAll = 'Pause all';
+  static const String resumeAll = 'Resume';
   static const String statusUploading = 'Uploading…';
   static const String statusSynced = 'Synced';
   static String statusRetrying(int attempt) => 'Retrying… (attempt $attempt)';
-  static String uploadedCount(int synced, int total) =>
-      '$synced of $total uploaded';
   static String progressSemantics(int percent) =>
       'Upload progress $percent percent';
-  static String sizeProgress(String done, String total) => '$done / $total';
+  static String sizeProgress(String done, String total) =>
+      '$done / $total $uploadedSuffix';
 
   static const String feedbackRetrying = 'Retrying uploads now';
   static const String feedbackCleared = 'Synced uploads cleared';

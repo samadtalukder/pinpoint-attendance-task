@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/strings.dart';
+import '../../../core/theme.dart';
 
-/// Icon plus text, so connection state is not conveyed by color alone.
+/// Dot plus text, so connection state is not conveyed by color alone.
 class ConnectionChip extends StatelessWidget {
   const ConnectionChip({super.key, required this.online});
 
@@ -10,17 +11,28 @@ class ConnectionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = online ? scheme.primary : scheme.error;
-    return Chip(
-      avatar: Icon(
-        online ? Icons.wifi : Icons.wifi_off,
-        size: 18,
-        color: color,
+    final colors = Theme.of(context).extension<StatusColors>()!;
+    final color = online ? colors.synced : colors.retrying;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+        color: color.withValues(alpha: 0.1),
       ),
-      label: Text(online ? AppStrings.online : AppStrings.offline),
-      side: BorderSide(color: color),
-      visualDensity: VisualDensity.compact,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.circle, size: 8, color: color),
+            const SizedBox(width: 6),
+            Text(
+              (online ? AppStrings.online : AppStrings.offline).toUpperCase(),
+              style: AppTheme.label(context, color: color),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/strings.dart';
+import '../core/theme.dart';
 import '../presentation/camera/camera_cubit.dart';
 import '../presentation/camera/camera_preview_screen.dart';
 import '../presentation/upload_manager/upload_manager_screen.dart';
@@ -17,13 +18,7 @@ class PinpointApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: AppStrings.appName,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.dark(),
       home: BlocProvider(
         create: (_) => CameraCubit(
           dependencies.camera,

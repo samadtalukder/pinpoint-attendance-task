@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/strings.dart';
+import '../../core/theme.dart';
 import '../../domain/services/mock_upload_mode_store.dart';
 import 'upload_queue_cubit.dart';
 import 'upload_queue_state.dart';
@@ -26,7 +27,13 @@ class UploadManagerScreen extends StatelessWidget {
         final cubit = context.read<UploadQueueCubit>();
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.uploadsTitle),
+            automaticallyImplyLeading: false,
+            titleSpacing: 16,
+            title: Text(
+              AppStrings.uploadsTitle,
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
             actions: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -44,6 +51,7 @@ class UploadManagerScreen extends StatelessWidget {
                   _MenuAction.mockSlow => cubit.setMockMode(
                     MockUploadMode.slow,
                   ),
+                  _MenuAction.retryNow => cubit.retryNow(),
                   _MenuAction.addSample => cubit.addSampleBatch(),
                   _MenuAction.clearSynced => cubit.clearSynced(),
                 },
@@ -68,6 +76,11 @@ class UploadManagerScreen extends StatelessWidget {
                     state.mode == MockUploadMode.slow,
                   ),
                   const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: _MenuAction.retryNow,
+                    enabled: state.pendingCount > 0 && !state.isUploading,
+                    child: const Text(AppStrings.retryNow),
+                  ),
                   const PopupMenuItem(
                     value: _MenuAction.addSample,
                     child: Text(AppStrings.addSampleBatch),
@@ -134,7 +147,14 @@ class UploadManagerScreen extends StatelessWidget {
   }
 }
 
-enum _MenuAction { mockSuccess, mockFailure, mockSlow, addSample, clearSynced }
+enum _MenuAction {
+  mockSuccess,
+  mockFailure,
+  mockSlow,
+  retryNow,
+  addSample,
+  clearSynced,
+}
 
 class _Body extends StatelessWidget {
   const _Body({required this.state});
@@ -178,7 +198,11 @@ class _Body extends StatelessWidget {
     final synced = state.synced;
     return ListView(
       children: [
-        SyncProgressHeader(state: state, onRetryNow: cubit.retryNow),
+        SyncProgressHeader(
+          state: state,
+          onPause: cubit.pauseAll,
+          onResume: cubit.resume,
+        ),
         if (pending.isNotEmpty) ...[
           _SectionHeader(
             '${AppStrings.pendingUploadsHeader} (${pending.length})',
@@ -188,6 +212,7 @@ class _Body extends StatelessWidget {
               key: ValueKey(item.id),
               upload: item,
               online: state.isOnline,
+              paused: state.isPaused,
             ),
         ],
         if (synced.isNotEmpty) ...[
@@ -197,6 +222,7 @@ class _Body extends StatelessWidget {
               key: ValueKey(item.id),
               upload: item,
               online: state.isOnline,
+              paused: state.isPaused,
             ),
         ],
       ],
@@ -215,7 +241,13 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Semantics(
         header: true,
-        child: Text(text, style: Theme.of(context).textTheme.titleSmall),
+        child: Text(
+          text.toUpperCase(),
+          style: AppTheme.label(
+            context,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }

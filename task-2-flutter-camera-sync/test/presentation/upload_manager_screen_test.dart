@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pinpoint_capture/core/strings.dart';
+import 'package:pinpoint_capture/core/theme.dart';
 import 'package:pinpoint_capture/domain/entities/pending_upload.dart';
 import 'package:pinpoint_capture/domain/entities/upload_status.dart';
 import 'package:pinpoint_capture/domain/repositories/upload_queue_repository.dart';
@@ -107,6 +108,7 @@ void main() {
     addTearDown(cubit.close);
     await tester.pumpWidget(
       MaterialApp(
+        theme: AppTheme.dark(),
         home: BlocProvider.value(
           value: cubit,
           child: UploadManagerScreen(
@@ -131,6 +133,8 @@ void main() {
     expect(startNewBatchTaps, 1);
   });
 
+  String caps(String text) => text.toUpperCase();
+
   testWidgets('lists every status with text, not only color', (tester) async {
     rows = [
       upload(1, UploadStatus.uploading),
@@ -145,22 +149,27 @@ void main() {
     ];
     await pumpScreen(tester);
 
-    expect(find.text(AppStrings.statusUploading), findsOneWidget);
-    expect(find.text(AppStrings.statusRetrying(3)), findsOneWidget);
+    expect(find.text(caps(AppStrings.statusUploading)), findsOneWidget);
+    expect(find.text(caps(AppStrings.statusRetrying(3))), findsOneWidget);
     expect(find.text('No internet connection'), findsOneWidget);
-    expect(find.text(AppStrings.statusWaiting), findsOneWidget);
-    expect(find.text(AppStrings.statusSynced), findsOneWidget);
-    expect(find.text('${AppStrings.pendingUploadsHeader} (3)'), findsOneWidget);
-    expect(find.text('${AppStrings.syncedHeader} (1)'), findsOneWidget);
+    expect(find.text(caps(AppStrings.statusWaiting)), findsOneWidget);
+    expect(find.text(caps(AppStrings.statusSynced)), findsOneWidget);
+    expect(
+      find.text(caps('${AppStrings.pendingUploadsHeader} (3)')),
+      findsOneWidget,
+    );
+    expect(find.text(caps('${AppStrings.syncedHeader} (1)')), findsOneWidget);
   });
 
-  testWidgets('shows progress as count, size and percent', (tester) async {
+  testWidgets('shows progress as size and percent', (tester) async {
     rows = [upload(1, UploadStatus.synced), upload(2, UploadStatus.waiting)];
     await pumpScreen(tester);
 
     expect(find.text('50%'), findsOneWidget);
-    expect(find.textContaining('1 of 2 uploaded'), findsOneWidget);
-    expect(find.textContaining('1.5 MB / 3.0 MB'), findsOneWidget);
+    expect(
+      find.text(AppStrings.sizeProgress('1.5 MB', '3.0 MB')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('offline shows the chip and a waiting-for-connection reason', (
@@ -170,32 +179,65 @@ void main() {
     rows = [upload(1, UploadStatus.waiting)];
     await pumpScreen(tester);
 
-    expect(find.text(AppStrings.offline), findsOneWidget);
-    expect(find.text(AppStrings.statusWaitingOffline), findsOneWidget);
+    expect(find.text(caps(AppStrings.offline)), findsOneWidget);
+    expect(find.text(caps(AppStrings.statusWaitingOffline)), findsOneWidget);
   });
 
-  testWidgets('Retry now requests an immediate sync', (tester) async {
-    rows = [upload(1, UploadStatus.retrying, attempts: 1, error: 'x')];
+  testWidgets('online chip says stable link', (tester) async {
     await pumpScreen(tester);
 
-    await tester.tap(find.text(AppStrings.retryNow));
-    await tester.pump();
-
-    verify(() => scheduler.requestSync(immediate: true)).called(1);
-    expect(find.text(AppStrings.feedbackRetrying), findsOneWidget);
+    expect(find.text(caps(AppStrings.online)), findsOneWidget);
   });
 
-  testWidgets('Retry now is disabled when nothing is pending', (tester) async {
+  testWidgets('Pause all pauses and the button becomes Resume', (tester) async {
+    rows = [upload(1, UploadStatus.waiting), upload(2, UploadStatus.waiting)];
+    await pumpScreen(tester);
+
+    await tester.tap(find.text(caps(AppStrings.pauseAll)));
+    await tester.pump();
+
+    verify(() => pauseStore.write(true)).called(1);
+    expect(find.text(caps(AppStrings.resumeAll)), findsOneWidget);
+    expect(find.text(caps(AppStrings.statusPaused)), findsNWidgets(2));
+  });
+
+  testWidgets('Resume restarts the worker immediately', (tester) async {
+    when(() => pauseStore.isPaused()).thenAnswer((_) async => true);
+    rows = [upload(1, UploadStatus.waiting)];
+    await pumpScreen(tester);
+
+    await tester.tap(find.text(caps(AppStrings.resumeAll)));
+    await tester.pump();
+
+    verify(() => pauseStore.write(false)).called(1);
+    verify(() => scheduler.requestSync(immediate: true)).called(1);
+    expect(find.text(caps(AppStrings.pauseAll)), findsOneWidget);
+  });
+
+  testWidgets('Pause all is disabled when nothing is pending', (tester) async {
     rows = [upload(1, UploadStatus.synced)];
     await pumpScreen(tester);
 
     final button = tester.widget<TextButton>(
       find.ancestor(
-        of: find.text(AppStrings.retryNow),
+        of: find.text(caps(AppStrings.pauseAll)),
         matching: find.byType(TextButton),
       ),
     );
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('menu Retry now requests an immediate sync', (tester) async {
+    rows = [upload(1, UploadStatus.retrying, attempts: 1, error: 'x')];
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(AppStrings.moreOptions));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.retryNow));
+    await tester.pump();
+
+    verify(() => scheduler.requestSync(immediate: true)).called(1);
+    expect(find.text(AppStrings.feedbackRetrying), findsOneWidget);
   });
 
   testWidgets('menu switches the mock upload result', (tester) async {
