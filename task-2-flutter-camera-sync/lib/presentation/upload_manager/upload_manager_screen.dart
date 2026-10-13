@@ -30,8 +30,10 @@ class UploadManagerScreen extends StatelessWidget {
             titleSpacing: 16,
             title: Text(
               AppStrings.uploadsTitle,
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             actions: [
               Padding(

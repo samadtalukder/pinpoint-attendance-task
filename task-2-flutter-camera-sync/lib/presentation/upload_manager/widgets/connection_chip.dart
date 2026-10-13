@@ -20,7 +20,7 @@ class ConnectionChip extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -28,7 +28,10 @@ class ConnectionChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               (online ? AppStrings.online : AppStrings.offline).toUpperCase(),
-              style: AppTheme.label(context, color: color),
+              style: AppTheme.label(
+                context,
+                color: color,
+              ).copyWith(letterSpacing: 0.4),
             ),
           ],
         ),
