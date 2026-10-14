@@ -2,6 +2,7 @@ package com.intelmachin.attendance.ui.attendance
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -33,6 +35,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.intelmachin.attendance.R
+import kotlinx.coroutines.launch
 
 /** Stateful host: owns Android plumbing (permission dialog, GPS prompt, settings intents). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +47,16 @@ fun AttendanceScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHost = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val settingsUnavailable = stringResource(R.string.settings_unavailable)
+    // Some OEM builds ship without these settings screens; say so instead of crashing.
+    val openSettings: (Intent) -> Unit = { intent ->
+        try {
+            context.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            scope.launch { snackbarHost.showSnackbar(settingsUnavailable) }
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
@@ -79,7 +92,7 @@ fun AttendanceScreen(
                 is AttendanceEvent.ResolveGps ->
                     gpsLauncher.launch(IntentSenderRequest.Builder(event.resolution).build())
 
-                AttendanceEvent.OpenLocationSettings -> context.openLocationSettings()
+                AttendanceEvent.OpenLocationSettings -> openSettings(locationSettingsIntent())
             }
         }
     }
@@ -115,26 +128,19 @@ fun AttendanceScreen(
             onSetOffice = viewModel::onSetOfficeLocation,
             onMarkAttendance = viewModel::onMarkAttendance,
             onGrantPermission = requestPermission,
-            onOpenSettings = { context.openAppSettings() },
+            onOpenSettings = { openSettings(appSettingsIntent(context.packageName)) },
             onEnableGps = viewModel::onEnableGps,
             modifier = Modifier.padding(padding),
         )
     }
 }
 
-private fun Context.openLocationSettings() {
-    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-}
+private fun locationSettingsIntent() =
+    Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-private fun Context.openAppSettings() {
-    startActivity(
-        Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.fromParts("package", packageName, null)
-        )
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-    )
-}
+private fun appSettingsIntent(packageName: String) =
+    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this

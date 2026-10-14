@@ -46,6 +46,7 @@
     <!-- Status banners -->
     <string name="permission_denied_title">Location permission needed</string>
     <string name="permission_denied_body">Attendance can only be marked near the office. Allow precise location so we can measure your distance from it. We use it for nothing else.</string>
+    <string name="settings_unavailable">This device cannot open the settings screen. Open Settings manually and enable Location for this app.</string>
     <string name="action_grant_permission">Grant permission</string>
     <string name="precise_location_title">Precise location needed</string>
     <string name="precise_location_body">Only approximate location is allowed, which is too coarse to measure your distance from the office. Allow precise location to continue.</string>
