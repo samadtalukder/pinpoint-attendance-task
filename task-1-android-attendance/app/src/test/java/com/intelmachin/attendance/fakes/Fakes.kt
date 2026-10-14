@@ -31,10 +31,11 @@ class FakeLocationRepository(initial: LocationStatus = LocationStatus.Searching)
     private val state = MutableStateFlow(initial)
     override val status: StateFlow<LocationStatus> = state
     var fixResult: LocationFix? = null
+    var fixError: Exception? = null
     var refreshCount = 0
 
     override fun refresh() { refreshCount++ }
-    override suspend fun currentFix(): LocationFix? = fixResult
+    override suspend fun currentFix(): LocationFix? = fixError?.let { throw it } ?: fixResult
     fun emit(status: LocationStatus) { state.value = status }
 }
 
@@ -45,7 +46,11 @@ class FakeGpsSettingsChecker(var result: GpsSettingsResult = GpsSettingsResult.A
 class FakeOfficeRepository(initial: GeoPoint? = null) : OfficeRepository {
     private val state = MutableStateFlow(initial)
     override val office: StateFlow<GeoPoint?> = state
-    override suspend fun save(point: GeoPoint) { state.value = point }
+    var saveError: Exception? = null
+    override suspend fun save(point: GeoPoint) {
+        saveError?.let { throw it }
+        state.value = point
+    }
 }
 
 class FakeCheckInRepository(initial: CheckIn? = null) : CheckInRepository {

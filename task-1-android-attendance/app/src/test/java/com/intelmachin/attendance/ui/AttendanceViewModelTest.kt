@@ -39,6 +39,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AttendanceViewModelTest {
@@ -226,6 +227,34 @@ class AttendanceViewModelTest {
         location.fixResult = fix(northOf(OFFICE, 300.0))
         vm.onMarkAttendance()
         assertEquals(AttendanceMessage.CheckInRejected, s().message)
+        assertNull(checkIns.lastCheckIn.first())
+    }
+
+    @Test
+    fun `set office storage failure clears busy flag and allows retry`() = runTest {
+        val vm = viewModel()
+        val s = state(vm)
+        location.fixResult = fix(OFFICE)
+        office.saveError = IOException("disk full")
+        vm.onSetOfficeLocation()
+        assertEquals(AttendanceMessage.ActionFailed, s().message)
+        assertFalse(s().isSettingOffice)
+        assertNull(s().office)
+        office.saveError = null
+        vm.onSetOfficeLocation()
+        assertEquals(AttendanceMessage.OfficeSaved, s().message)
+    }
+
+    @Test
+    fun `mark attendance gps failure clears busy flag and saves nothing`() = runTest {
+        office.save(OFFICE)
+        val vm = viewModel()
+        val s = state(vm)
+        location.emit(LocationStatus.Available(fix(OFFICE)))
+        location.fixError = SecurityException("permission revoked")
+        vm.onMarkAttendance()
+        assertEquals(AttendanceMessage.ActionFailed, s().message)
+        assertFalse(s().isMarking)
         assertNull(checkIns.lastCheckIn.first())
     }
 }
