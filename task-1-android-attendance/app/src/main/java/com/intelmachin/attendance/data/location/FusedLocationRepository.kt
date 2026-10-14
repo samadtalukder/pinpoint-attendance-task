@@ -14,7 +14,6 @@ import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
@@ -110,8 +109,7 @@ class FusedLocationRepository @Inject constructor(
                 result.lastLocation?.let { trySend(it.toFix()) }
             }
         }
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL_MS).build()
-        client.requestLocationUpdates(request, callback, Looper.getMainLooper())
+        client.requestLocationUpdates(highAccuracyRequest(), callback, Looper.getMainLooper())
         awaitClose { client.removeLocationUpdates(callback) }
     }
 
@@ -123,7 +121,6 @@ class FusedLocationRepository @Inject constructor(
     )
 
     private companion object {
-        const val UPDATE_INTERVAL_MS = 2_000L
         const val FIX_TIMEOUT_MS = 10_000L
     }
 }

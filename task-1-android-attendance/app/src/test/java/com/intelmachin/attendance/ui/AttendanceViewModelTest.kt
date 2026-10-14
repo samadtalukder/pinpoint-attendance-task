@@ -7,7 +7,11 @@ import com.intelmachin.attendance.domain.usecase.Eligibility
 import com.intelmachin.attendance.domain.usecase.EvaluateAttendanceUseCase
 import com.intelmachin.attendance.domain.usecase.MarkAttendanceUseCase
 import com.intelmachin.attendance.domain.usecase.SetOfficeLocationUseCase
+import com.intelmachin.attendance.domain.repository.GpsSettingsResult
 import com.intelmachin.attendance.fakes.FakeCheckInRepository
+import com.intelmachin.attendance.fakes.FakeGpsSettingsChecker
+import com.intelmachin.attendance.ui.attendance.AttendanceEvent
+import kotlinx.coroutines.withTimeoutOrNull
 import com.intelmachin.attendance.fakes.FakeLocationRepository
 import com.intelmachin.attendance.fakes.FakeOfficeRepository
 import com.intelmachin.attendance.fakes.OFFICE
@@ -41,6 +45,7 @@ class AttendanceViewModelTest {
     private val location = FakeLocationRepository()
     private val office = FakeOfficeRepository()
     private val checkIns = FakeCheckInRepository()
+    private val gpsSettings = FakeGpsSettingsChecker()
 
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
     @After fun tearDown() = Dispatchers.resetMain()
@@ -53,6 +58,7 @@ class AttendanceViewModelTest {
             location, office, checkIns, evaluate,
             SetOfficeLocationUseCase(location, office, policy),
             MarkAttendanceUseCase(location, office, checkIns, evaluate, clock),
+            gpsSettings,
         )
     }
 
@@ -88,6 +94,23 @@ class AttendanceViewModelTest {
         val s = state(vm)
         location.emit(LocationStatus.GpsOff)
         assertEquals(LocationAvailability.GpsOff, s().availability)
+    }
+
+    @Test
+    fun `enable gps when already on refreshes location and emits no event`() = runTest {
+        gpsSettings.result = GpsSettingsResult.AlreadyOn
+        val vm = viewModel()
+        vm.onEnableGps()
+        assertEquals(1, location.refreshCount)
+        assertNull(withTimeoutOrNull(100) { vm.events.first() })
+    }
+
+    @Test
+    fun `enable gps when unresolvable opens location settings`() = runTest {
+        gpsSettings.result = GpsSettingsResult.Unavailable
+        val vm = viewModel()
+        vm.onEnableGps()
+        assertEquals(AttendanceEvent.OpenLocationSettings, vm.events.first())
     }
 
     @Test

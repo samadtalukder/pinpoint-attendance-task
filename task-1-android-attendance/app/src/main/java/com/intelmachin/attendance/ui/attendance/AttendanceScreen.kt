@@ -28,18 +28,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.app.ActivityCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.location.Priority
 import com.intelmachin.attendance.R
-
-private const val GPS_PROBE_INTERVAL_MS = 2_000L
 
 /** Stateful host: owns Android plumbing (permission dialog, GPS prompt, settings intents). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,21 +50,39 @@ fun AttendanceScreen(
     ) { result ->
         val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true
         val canAskAgain = context.findActivity()?.let {
-            ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                it,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
         } ?: false
         viewModel.onPermissionResult(granted, canRequestAgain = canAskAgain)
     }
     val requestPermission = {
         permissionLauncher.launch(
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
         )
     }
+    // Result needs no handling: ON_RESUME below refreshes location state when the dialog closes.
     val gpsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
-    ) { viewModel.onScreenResumed() }
+    ) { }
 
     // No auto-prompt: the permission banner explains why location is needed, and its button asks.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onScreenResumed() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is AttendanceEvent.ResolveGps ->
+                    gpsLauncher.launch(IntentSenderRequest.Builder(event.resolution).build())
+
+                AttendanceEvent.OpenLocationSettings -> context.openLocationSettings()
+            }
+        }
+    }
 
     val message = state.message
     val messageText = message?.text()
@@ -103,37 +114,24 @@ fun AttendanceScreen(
             state = state,
             onSetOffice = viewModel::onSetOfficeLocation,
             onMarkAttendance = viewModel::onMarkAttendance,
-            onGrantPermission = { requestPermission() },
+            onGrantPermission = requestPermission,
             onOpenSettings = { context.openAppSettings() },
-            onEnableGps = { promptEnableGps(context, gpsLauncher::launch, viewModel::onScreenResumed) },
+            onEnableGps = viewModel::onEnableGps,
             modifier = Modifier.padding(padding),
         )
     }
 }
 
-private fun promptEnableGps(
-    context: Context,
-    launchResolution: (IntentSenderRequest) -> Unit,
-    onAlreadyOn: () -> Unit,
-) {
-    val request = LocationSettingsRequest.Builder()
-        .addLocationRequest(LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, GPS_PROBE_INTERVAL_MS).build())
-        .setAlwaysShow(true)
-        .build()
-    LocationServices.getSettingsClient(context).checkLocationSettings(request)
-        .addOnSuccessListener { onAlreadyOn() }
-        .addOnFailureListener { error ->
-            if (error is ResolvableApiException) {
-                launchResolution(IntentSenderRequest.Builder(error.resolution).build())
-            } else {
-                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
-        }
+private fun Context.openLocationSettings() {
+    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 private fun Context.openAppSettings() {
     startActivity(
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
+        Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null)
+        )
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
     )
 }

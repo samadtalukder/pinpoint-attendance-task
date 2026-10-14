@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.intelmachin.attendance.domain.model.LocationStatus
 import com.intelmachin.attendance.domain.repository.CheckInRepository
+import com.intelmachin.attendance.domain.repository.GpsSettingsChecker
+import com.intelmachin.attendance.domain.repository.GpsSettingsResult
 import com.intelmachin.attendance.domain.repository.LocationRepository
 import com.intelmachin.attendance.domain.repository.OfficeRepository
 import com.intelmachin.attendance.domain.usecase.EvaluateAttendanceUseCase
@@ -12,12 +14,15 @@ import com.intelmachin.attendance.domain.usecase.MarkAttendanceUseCase
 import com.intelmachin.attendance.domain.usecase.SetOfficeLocationUseCase
 import com.intelmachin.attendance.domain.usecase.SetOfficeResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -32,6 +37,7 @@ class AttendanceViewModel @Inject constructor(
     private val evaluate: EvaluateAttendanceUseCase,
     private val setOfficeLocation: SetOfficeLocationUseCase,
     private val markAttendance: MarkAttendanceUseCase,
+    private val gpsSettings: GpsSettingsChecker,
 ) : ViewModel() {
 
     private data class Local(
@@ -42,6 +48,11 @@ class AttendanceViewModel @Inject constructor(
     )
 
     private val local = MutableStateFlow(Local())
+
+    private val eventChannel = Channel<AttendanceEvent>(Channel.BUFFERED)
+
+    /** One-shot platform actions the screen must perform, each delivered once. */
+    val events: Flow<AttendanceEvent> = eventChannel.receiveAsFlow()
 
     /** Re-evaluates time-based rules (window, fix age) while the screen stays open. */
     private val clockTick = flow {
@@ -86,6 +97,16 @@ class AttendanceViewModel @Inject constructor(
 
     /** Call when the screen returns to the foreground, e.g. after app settings or GPS settings. */
     fun onScreenResumed() = location.refresh()
+
+    fun onEnableGps() {
+        viewModelScope.launch {
+            when (val result = gpsSettings.check()) {
+                GpsSettingsResult.AlreadyOn -> location.refresh()
+                is GpsSettingsResult.NeedsResolution -> eventChannel.send(AttendanceEvent.ResolveGps(result.resolution))
+                GpsSettingsResult.Unavailable -> eventChannel.send(AttendanceEvent.OpenLocationSettings)
+            }
+        }
+    }
 
     fun onSetOfficeLocation() {
         if (local.value.isSettingOffice) return

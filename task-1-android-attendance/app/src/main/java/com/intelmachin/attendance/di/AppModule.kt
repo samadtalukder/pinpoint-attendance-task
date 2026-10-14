@@ -6,11 +6,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.SettingsClient
 import com.intelmachin.attendance.data.location.FusedLocationRepository
+import com.intelmachin.attendance.data.location.PlayServicesGpsSettingsChecker
 import com.intelmachin.attendance.data.store.DataStoreCheckInRepository
 import com.intelmachin.attendance.data.store.DataStoreOfficeRepository
 import com.intelmachin.attendance.domain.AttendancePolicy
 import com.intelmachin.attendance.domain.repository.CheckInRepository
+import com.intelmachin.attendance.domain.repository.GpsSettingsChecker
 import com.intelmachin.attendance.domain.repository.LocationRepository
 import com.intelmachin.attendance.domain.repository.OfficeRepository
 import dagger.Binds
@@ -29,11 +32,16 @@ private val Context.attendanceDataStore: DataStore<Preferences> by preferencesDa
 @InstallIn(SingletonComponent::class)
 abstract class LocationModule {
     @Binds abstract fun location(impl: FusedLocationRepository): LocationRepository
+    @Binds abstract fun gpsSettings(impl: PlayServicesGpsSettingsChecker): GpsSettingsChecker
 
     companion object {
         @Provides @Singleton
         fun fusedClient(@ApplicationContext context: Context): FusedLocationProviderClient =
             LocationServices.getFusedLocationProviderClient(context)
+
+        @Provides @Singleton
+        fun settingsClient(@ApplicationContext context: Context): SettingsClient =
+            LocationServices.getSettingsClient(context)
     }
 }
 

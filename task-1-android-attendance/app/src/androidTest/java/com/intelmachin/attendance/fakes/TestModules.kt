@@ -12,6 +12,8 @@ import com.intelmachin.attendance.domain.model.GeoPoint
 import com.intelmachin.attendance.domain.model.LocationFix
 import com.intelmachin.attendance.domain.model.LocationStatus
 import com.intelmachin.attendance.domain.repository.CheckInRepository
+import com.intelmachin.attendance.domain.repository.GpsSettingsChecker
+import com.intelmachin.attendance.domain.repository.GpsSettingsResult
 import com.intelmachin.attendance.domain.repository.LocationRepository
 import com.intelmachin.attendance.domain.repository.OfficeRepository
 import dagger.Binds
@@ -68,6 +70,10 @@ class FakeLocationRepository @Inject constructor(
     }
 }
 
+class FakeGpsSettingsChecker @Inject constructor() : GpsSettingsChecker {
+    override suspend fun check(): GpsSettingsResult = GpsSettingsResult.AlreadyOn
+}
+
 @Singleton
 class InMemoryOfficeRepository @Inject constructor() : OfficeRepository {
     override val office = MutableStateFlow<GeoPoint?>(null)
@@ -84,6 +90,7 @@ class InMemoryCheckInRepository @Inject constructor() : CheckInRepository {
 @TestInstallIn(components = [SingletonComponent::class], replaces = [LocationModule::class])
 abstract class FakeLocationModule {
     @Binds abstract fun location(fake: FakeLocationRepository): LocationRepository
+    @Binds abstract fun gpsSettings(fake: FakeGpsSettingsChecker): GpsSettingsChecker
 }
 
 @Module

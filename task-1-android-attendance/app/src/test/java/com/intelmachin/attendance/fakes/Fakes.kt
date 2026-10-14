@@ -5,6 +5,8 @@ import com.intelmachin.attendance.domain.model.GeoPoint
 import com.intelmachin.attendance.domain.model.LocationFix
 import com.intelmachin.attendance.domain.model.LocationStatus
 import com.intelmachin.attendance.domain.repository.CheckInRepository
+import com.intelmachin.attendance.domain.repository.GpsSettingsChecker
+import com.intelmachin.attendance.domain.repository.GpsSettingsResult
 import com.intelmachin.attendance.domain.repository.LocationRepository
 import com.intelmachin.attendance.domain.repository.OfficeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +36,10 @@ class FakeLocationRepository(initial: LocationStatus = LocationStatus.Searching)
     override fun refresh() { refreshCount++ }
     override suspend fun currentFix(): LocationFix? = fixResult
     fun emit(status: LocationStatus) { state.value = status }
+}
+
+class FakeGpsSettingsChecker(var result: GpsSettingsResult = GpsSettingsResult.AlreadyOn) : GpsSettingsChecker {
+    override suspend fun check(): GpsSettingsResult = result
 }
 
 class FakeOfficeRepository(initial: GeoPoint? = null) : OfficeRepository {
