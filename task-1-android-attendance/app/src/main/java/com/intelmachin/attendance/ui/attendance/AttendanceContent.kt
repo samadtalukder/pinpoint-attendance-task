@@ -25,6 +25,8 @@ import com.intelmachin.attendance.ui.attendance.components.StatusBanner
 import com.intelmachin.attendance.ui.theme.AttendanceTheme
 
 private val MAP_HEIGHT = 140.dp
+private val SCREEN_PADDING = 16.dp
+private val SECTION_SPACING = 20.dp
 
 /** Stateless: renders [state] and reports intents. No rules live here. */
 @Composable
@@ -40,15 +42,15 @@ fun AttendanceContent(
 ) {
     if (state.availability.blocksScreen) {
         // Nothing else is meaningful without permission or GPS: show only the prompt, centered.
-        Box(modifier = modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = modifier.fillMaxSize().padding(SCREEN_PADDING), contentAlignment = Alignment.Center) {
             StatusBanner(state.availability, onGrantPermission, onOpenSettings, onEnableGps)
         }
         return
     }
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
+        modifier = modifier.verticalScroll(rememberScrollState()).padding(SCREEN_PADDING),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        verticalArrangement = Arrangement.spacedBy(SECTION_SPACING),
     ) {
         StatusBanner(state.availability, onGrantPermission, onOpenSettings, onEnableGps)
         OfficeContextCard(
@@ -64,20 +66,96 @@ fun AttendanceContent(
     }
 }
 
-@Preview(showBackground = true, heightDp = 900)
+private val PREVIEW_OFFICE = GeoPoint(40.7128, -74.0060)
+
 @Composable
-private fun OutOfRangePreview() {
+private fun PreviewContent(state: AttendanceUiState) {
     AttendanceTheme {
         AttendanceContent(
-            state = AttendanceUiState(
-                availability = LocationAvailability.Ready,
-                office = GeoPoint(40.7128, -74.0060),
-                distanceMeters = 120.0,
-                isInRange = false,
-                eligibility = Eligibility.OutOfRange,
-            ),
+            state = state,
             onSetOffice = {}, onMarkAttendance = {}, onGrantPermission = {}, onOpenSettings = {}, onEnableGps = {},
             officeMap = {},
         )
     }
 }
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun OutOfRangePreview() = PreviewContent(
+    AttendanceUiState(
+        availability = LocationAvailability.Ready,
+        office = PREVIEW_OFFICE,
+        distanceMeters = 120.0,
+        isInRange = false,
+        eligibility = Eligibility.OutOfRange,
+    ),
+)
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun InRangeEligiblePreview() = PreviewContent(
+    AttendanceUiState(
+        availability = LocationAvailability.Ready,
+        office = PREVIEW_OFFICE,
+        distanceMeters = 12.0,
+        isInRange = true,
+        eligibility = Eligibility.Eligible,
+    ),
+)
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun MarkingPreview() = PreviewContent(
+    AttendanceUiState(
+        availability = LocationAvailability.Ready,
+        office = PREVIEW_OFFICE,
+        distanceMeters = 12.0,
+        isInRange = true,
+        eligibility = Eligibility.Eligible,
+        isMarking = true,
+    ),
+)
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun OutsideWindowPreview() = PreviewContent(
+    AttendanceUiState(
+        availability = LocationAvailability.Ready,
+        office = PREVIEW_OFFICE,
+        distanceMeters = 12.0,
+        isInRange = true,
+        eligibility = Eligibility.OutsideWindow,
+        isWindowOpen = false,
+    ),
+)
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun StaleFixPreview() = PreviewContent(
+    AttendanceUiState(
+        availability = LocationAvailability.Ready,
+        office = PREVIEW_OFFICE,
+        distanceMeters = 30.0,
+        isInRange = true,
+        isFixStale = true,
+        eligibility = Eligibility.StaleFix,
+    ),
+)
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun NoOfficePreview() = PreviewContent(
+    AttendanceUiState(availability = LocationAvailability.Ready),
+)
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun PermissionDeniedPreview() = PreviewContent(
+    AttendanceUiState(availability = LocationAvailability.PermissionDenied),
+)
+
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun GpsOffPreview() = PreviewContent(
+    AttendanceUiState(availability = LocationAvailability.GpsOff),
+)
