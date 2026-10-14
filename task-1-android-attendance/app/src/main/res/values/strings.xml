@@ -66,4 +66,5 @@
     <string name="message_office_low_accuracy">GPS accuracy is too low. Move to open sky and try again.</string>
     <string name="message_checked_in">Attendance marked</string>
     <string name="message_check_in_rejected">Could not mark attendance. Check range, accuracy and time.</string>
+    <string name="message_action_failed">Something went wrong. Please try again.</string>
 </resources>

@@ -13,7 +13,7 @@ enum class LocationAvailability {
 
 /** One-off feedback shown once, then cleared with [AttendanceViewModel.onMessageShown]. */
 enum class AttendanceMessage {
-    OfficeSaved, OfficeNoFix, OfficeMockLocation, OfficeLowAccuracy, CheckedIn, CheckInRejected
+    OfficeSaved, OfficeNoFix, OfficeMockLocation, OfficeLowAccuracy, CheckedIn, CheckInRejected, ActionFailed
 }
 
 data class AttendanceUiState(

@@ -14,6 +14,7 @@ import com.intelmachin.attendance.domain.usecase.MarkAttendanceUseCase
 import com.intelmachin.attendance.domain.usecase.SetOfficeLocationUseCase
 import com.intelmachin.attendance.domain.usecase.SetOfficeResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -111,29 +112,48 @@ class AttendanceViewModel @Inject constructor(
         }
     }
 
-    fun onSetOfficeLocation() {
-        if (local.value.isSettingOffice) return
-        viewModelScope.launch {
-            local.update { it.copy(isSettingOffice = true) }
-            val message = when (setOfficeLocation()) {
-                is SetOfficeResult.Saved -> AttendanceMessage.OfficeSaved
-                SetOfficeResult.NoFix -> AttendanceMessage.OfficeNoFix
-                SetOfficeResult.MockLocation -> AttendanceMessage.OfficeMockLocation
-                is SetOfficeResult.LowAccuracy -> AttendanceMessage.OfficeLowAccuracy
-            }
-            local.update { it.copy(isSettingOffice = false, message = message) }
+    fun onSetOfficeLocation() = runAction(
+        isBusy = local.value.isSettingOffice,
+        setBusy = { copy(isSettingOffice = it) },
+    ) {
+        when (setOfficeLocation()) {
+            is SetOfficeResult.Saved -> AttendanceMessage.OfficeSaved
+            SetOfficeResult.NoFix -> AttendanceMessage.OfficeNoFix
+            SetOfficeResult.MockLocation -> AttendanceMessage.OfficeMockLocation
+            is SetOfficeResult.LowAccuracy -> AttendanceMessage.OfficeLowAccuracy
         }
     }
 
-    fun onMarkAttendance() {
-        if (local.value.isMarking) return
+    fun onMarkAttendance() = runAction(
+        isBusy = local.value.isMarking,
+        setBusy = { copy(isMarking = it) },
+    ) {
+        when (markAttendance()) {
+            is MarkAttendanceResult.Marked -> AttendanceMessage.CheckedIn
+            is MarkAttendanceResult.Rejected -> AttendanceMessage.CheckInRejected
+        }
+    }
+
+    /**
+     * Runs [action] behind a busy flag and reports its message. A failing GPS read or storage write
+     * must not leave the flag stuck or crash the app, so it becomes [AttendanceMessage.ActionFailed].
+     */
+    private fun runAction(
+        isBusy: Boolean,
+        setBusy: Local.(Boolean) -> Local,
+        action: suspend () -> AttendanceMessage,
+    ) {
+        if (isBusy) return
         viewModelScope.launch {
-            local.update { it.copy(isMarking = true) }
-            val message = when (markAttendance()) {
-                is MarkAttendanceResult.Marked -> AttendanceMessage.CheckedIn
-                is MarkAttendanceResult.Rejected -> AttendanceMessage.CheckInRejected
+            local.update { it.setBusy(true) }
+            val message = try {
+                action()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AttendanceMessage.ActionFailed
             }
-            local.update { it.copy(isMarking = false, message = message) }
+            local.update { it.setBusy(false).copy(message = message) }
         }
     }
 

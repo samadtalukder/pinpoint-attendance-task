@@ -60,6 +60,7 @@ fun AttendanceMessage.text(): String = stringResource(
         AttendanceMessage.OfficeLowAccuracy -> R.string.message_office_low_accuracy
         AttendanceMessage.CheckedIn -> R.string.message_checked_in
         AttendanceMessage.CheckInRejected -> R.string.message_check_in_rejected
+        AttendanceMessage.ActionFailed -> R.string.message_action_failed
     },
 )
 
