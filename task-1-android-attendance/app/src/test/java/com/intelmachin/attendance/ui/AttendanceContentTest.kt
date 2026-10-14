@@ -114,6 +114,15 @@ class AttendanceContentTest {
     }
 
     @Test
+    fun `approximate only asks for precise location`() {
+        show(AttendanceUiState(availability = LocationAvailability.PreciseLocationNeeded))
+        compose.onNodeWithText("Precise location needed").assertIsDisplayed()
+        compose.onNodeWithText("Mark Attendance").assertDoesNotExist()
+        compose.onNodeWithText("Allow precise location").performClick()
+        assertEquals(1, grantClicks)
+    }
+
+    @Test
     fun `permanently denied offers open settings`() {
         show(AttendanceUiState(availability = LocationAvailability.PermissionPermanentlyDenied))
         compose.onNodeWithText("Location permission is blocked").assertIsDisplayed()

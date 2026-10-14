@@ -15,6 +15,10 @@ data class CheckIn(val epochMillis: Long)
 
 sealed interface LocationStatus {
     data object PermissionDenied : LocationStatus
+
+    /** Only approximate (coarse) location is granted; the app needs precise. */
+    data object ApproximateOnly : LocationStatus
+
     data object GpsOff : LocationStatus
     data object Searching : LocationStatus
     data class Available(val fix: LocationFix) : LocationStatus

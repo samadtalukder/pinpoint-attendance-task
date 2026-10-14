@@ -51,6 +51,8 @@ fun StatusBanner(
         LocationAvailability.Ready -> return
         LocationAvailability.PermissionDenied ->
             BannerContent(Icons.Filled.LocationDisabled, R.string.permission_denied_title, R.string.permission_denied_body, R.string.action_grant_permission)
+        LocationAvailability.PreciseLocationNeeded ->
+            BannerContent(Icons.Filled.LocationDisabled, R.string.precise_location_title, R.string.precise_location_body, R.string.action_allow_precise)
         LocationAvailability.PermissionPermanentlyDenied ->
             BannerContent(Icons.Filled.LocationDisabled, R.string.permission_blocked_title, R.string.permission_blocked_body, R.string.action_open_settings)
         LocationAvailability.GpsOff ->
@@ -59,7 +61,7 @@ fun StatusBanner(
             BannerContent(null, R.string.searching_title, R.string.searching_body, null)
     }
     val onAction = when (availability) {
-        LocationAvailability.PermissionDenied -> onGrantPermission
+        LocationAvailability.PermissionDenied, LocationAvailability.PreciseLocationNeeded -> onGrantPermission
         LocationAvailability.PermissionPermanentlyDenied -> onOpenSettings
         LocationAvailability.GpsOff -> onEnableGps
         else -> ({})

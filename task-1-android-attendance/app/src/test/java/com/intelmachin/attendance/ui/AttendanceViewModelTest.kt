@@ -89,6 +89,24 @@ class AttendanceViewModelTest {
     }
 
     @Test
+    fun `approximate only asks for precise location`() = runTest {
+        val vm = viewModel()
+        val s = state(vm)
+        location.emit(LocationStatus.ApproximateOnly)
+        assertEquals(LocationAvailability.PreciseLocationNeeded, s().availability)
+        assertFalse(s().canMarkAttendance)
+    }
+
+    @Test
+    fun `approximate only with no further prompts points to settings`() = runTest {
+        val vm = viewModel()
+        val s = state(vm)
+        location.emit(LocationStatus.ApproximateOnly)
+        vm.onPermissionResult(granted = false, canRequestAgain = false)
+        assertEquals(LocationAvailability.PermissionPermanentlyDenied, s().availability)
+    }
+
+    @Test
     fun `gps off is surfaced`() = runTest {
         val vm = viewModel()
         val s = state(vm)

@@ -72,6 +72,9 @@ class AttendanceViewModel @Inject constructor(
                 LocationStatus.PermissionDenied ->
                     if (local.permissionPermanentlyDenied) LocationAvailability.PermissionPermanentlyDenied
                     else LocationAvailability.PermissionDenied
+                LocationStatus.ApproximateOnly ->
+                    if (local.permissionPermanentlyDenied) LocationAvailability.PermissionPermanentlyDenied
+                    else LocationAvailability.PreciseLocationNeeded
                 LocationStatus.GpsOff -> LocationAvailability.GpsOff
                 LocationStatus.Searching -> LocationAvailability.Searching
                 is LocationStatus.Available -> LocationAvailability.Ready

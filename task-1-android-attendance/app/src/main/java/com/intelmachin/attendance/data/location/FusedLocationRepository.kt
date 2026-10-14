@@ -48,12 +48,14 @@ class FusedLocationRepository @Inject constructor(
 
     private val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     /** StateFlow drops equal values, so [refresh] restarts updates only when permission really changed. */
-    private val permissionGranted = MutableStateFlow(hasPermission())
+    private val permission = MutableStateFlow(currentPermission())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val status: Flow<LocationStatus> = permissionGranted.flatMapLatest { granted ->
-        if (!granted) {
+    override val status: Flow<LocationStatus> = permission.flatMapLatest { level ->
+        if (level == Permission.None) {
             flowOf(LocationStatus.PermissionDenied)
+        } else if (level == Permission.Approximate) {
+            flowOf(LocationStatus.ApproximateOnly)
         } else {
             locationEnabled().flatMapLatest { enabled ->
                 if (enabled) fixes().map<LocationFix, LocationStatus> { LocationStatus.Available(it) }
@@ -65,12 +67,12 @@ class FusedLocationRepository @Inject constructor(
     }
 
     override fun refresh() {
-        permissionGranted.value = hasPermission()
+        permission.value = currentPermission()
     }
 
     @SuppressLint("MissingPermission")
     override suspend fun currentFix(): LocationFix? {
-        if (!hasPermission()) return null
+        if (currentPermission() != Permission.Precise) return null
         val cancellation = CancellationTokenSource()
         return try {
             withTimeoutOrNull(FIX_TIMEOUT_MS) {
@@ -83,9 +85,16 @@ class FusedLocationRepository @Inject constructor(
         }
     }
 
-    private fun hasPermission(): Boolean =
-        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
+    private enum class Permission { None, Approximate, Precise }
+
+    private fun currentPermission(): Permission = when {
+        isGranted(Manifest.permission.ACCESS_FINE_LOCATION) -> Permission.Precise
+        isGranted(Manifest.permission.ACCESS_COARSE_LOCATION) -> Permission.Approximate
+        else -> Permission.None
+    }
+
+    private fun isGranted(permission: String): Boolean =
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
     private fun locationEnabled(): Flow<Boolean> = callbackFlow {
         val receiver = object : BroadcastReceiver() {
