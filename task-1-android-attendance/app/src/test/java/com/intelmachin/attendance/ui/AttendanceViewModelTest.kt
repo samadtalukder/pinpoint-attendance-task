@@ -9,6 +9,7 @@ import com.intelmachin.attendance.domain.usecase.MarkAttendanceUseCase
 import com.intelmachin.attendance.domain.usecase.SetOfficeLocationUseCase
 import com.intelmachin.attendance.domain.repository.GpsSettingsResult
 import com.intelmachin.attendance.fakes.FakeCheckInRepository
+import com.intelmachin.attendance.fakes.FakeErrorLogger
 import com.intelmachin.attendance.fakes.FakeGpsSettingsChecker
 import com.intelmachin.attendance.ui.attendance.AttendanceEvent
 import kotlinx.coroutines.withTimeoutOrNull
@@ -47,6 +48,7 @@ class AttendanceViewModelTest {
     private val office = FakeOfficeRepository()
     private val checkIns = FakeCheckInRepository()
     private val gpsSettings = FakeGpsSettingsChecker()
+    private val errorLogger = FakeErrorLogger()
 
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
     @After fun tearDown() = Dispatchers.resetMain()
@@ -60,6 +62,7 @@ class AttendanceViewModelTest {
             SetOfficeLocationUseCase(location, office, policy),
             MarkAttendanceUseCase(location, office, checkIns, evaluate, clock),
             gpsSettings,
+            errorLogger,
         )
     }
 
@@ -250,6 +253,7 @@ class AttendanceViewModelTest {
         office.saveError = IOException("disk full")
         vm.onSetOfficeLocation()
         assertEquals(AttendanceMessage.ActionFailed, s().message)
+        assertEquals(1, errorLogger.errors.size)
         assertFalse(s().isSettingOffice)
         assertNull(s().office)
         office.saveError = null

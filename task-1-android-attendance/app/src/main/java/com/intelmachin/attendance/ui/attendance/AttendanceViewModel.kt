@@ -1,8 +1,8 @@
 package com.intelmachin.attendance.ui.attendance
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.intelmachin.attendance.domain.ErrorLogger
 import com.intelmachin.attendance.domain.model.LocationStatus
 import com.intelmachin.attendance.domain.repository.CheckInRepository
 import com.intelmachin.attendance.domain.repository.GpsSettingsChecker
@@ -40,6 +40,7 @@ class AttendanceViewModel @Inject constructor(
     private val setOfficeLocation: SetOfficeLocationUseCase,
     private val markAttendance: MarkAttendanceUseCase,
     private val gpsSettings: GpsSettingsChecker,
+    private val errorLogger: ErrorLogger,
 ) : ViewModel() {
 
     private data class Local(
@@ -114,7 +115,7 @@ class AttendanceViewModel @Inject constructor(
     }
 
     fun onSetOfficeLocation() = runAction(
-        isBusy = local.value.isSettingOffice,
+        isBusy = { isSettingOffice },
         setBusy = { copy(isSettingOffice = it) },
     ) {
         when (setOfficeLocation()) {
@@ -126,7 +127,7 @@ class AttendanceViewModel @Inject constructor(
     }
 
     fun onMarkAttendance() = runAction(
-        isBusy = local.value.isMarking,
+        isBusy = { isMarking },
         setBusy = { copy(isMarking = it) },
     ) {
         when (val result = markAttendance()) {
@@ -138,21 +139,26 @@ class AttendanceViewModel @Inject constructor(
     /**
      * Runs [action] behind a busy flag and reports its message. A failing GPS read or storage write
      * must not leave the flag stuck or crash the app, so it becomes [AttendanceMessage.ActionFailed].
+     * The flag is claimed atomically, so a second tap while one action runs is ignored.
      */
     private fun runAction(
-        isBusy: Boolean,
+        isBusy: Local.() -> Boolean,
         setBusy: Local.(Boolean) -> Local,
         action: suspend () -> AttendanceMessage,
     ) {
-        if (isBusy) return
+        var claimed = false
+        local.update {
+            claimed = !it.isBusy()
+            if (claimed) it.setBusy(true) else it
+        }
+        if (!claimed) return
         viewModelScope.launch {
-            local.update { it.setBusy(true) }
             val message = try {
                 action()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Log.e(TAG, "Attendance action failed", e)
+                errorLogger.error("Attendance action failed", e)
                 AttendanceMessage.ActionFailed
             }
             local.update { it.setBusy(false).copy(message = message) }
@@ -162,7 +168,6 @@ class AttendanceViewModel @Inject constructor(
     fun onMessageShown() = local.update { it.copy(message = null) }
 
     private companion object {
-        const val TAG = "AttendanceViewModel"
         const val CLOCK_TICK_MS = 5_000L
         const val STOP_TIMEOUT_MS = 5_000L
     }

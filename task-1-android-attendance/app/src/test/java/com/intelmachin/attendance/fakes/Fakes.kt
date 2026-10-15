@@ -1,5 +1,6 @@
 package com.intelmachin.attendance.fakes
 
+import com.intelmachin.attendance.domain.ErrorLogger
 import com.intelmachin.attendance.domain.model.CheckIn
 import com.intelmachin.attendance.domain.model.GeoPoint
 import com.intelmachin.attendance.domain.model.LocationFix
@@ -57,4 +58,9 @@ class FakeCheckInRepository(initial: CheckIn? = null) : CheckInRepository {
     private val state = MutableStateFlow(initial)
     override val lastCheckIn: StateFlow<CheckIn?> = state
     override suspend fun save(checkIn: CheckIn) { state.value = checkIn }
+}
+
+class FakeErrorLogger : ErrorLogger {
+    val errors = mutableListOf<Throwable>()
+    override fun error(message: String, cause: Throwable) { errors += cause }
 }

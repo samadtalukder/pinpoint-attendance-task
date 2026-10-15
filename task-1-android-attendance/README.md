@@ -54,13 +54,15 @@ task-1-android-attendance/
     │   │   └── theme/              Material 3 theme and status colors
     │   ├── domain/
     │   │   ├── AttendanceRules.kt  constants: 50 m, 30 m accuracy, 09:00-10:30
-    │   │   ├── AttendancePolicy.kt
+    │   │   ├── AttendancePolicy.kt switchable rules and the shared fix-trust check
+    │   │   ├── ErrorLogger.kt      port for handled failures
     │   │   ├── model/              plain data classes
     │   │   ├── repository/         Location, Office and CheckIn repository interfaces
     │   │   └── usecase/            CalculateDistance, EvaluateAttendance,
     │   │                           SetOfficeLocation, MarkAttendance
     │   └── data/
     │       ├── location/           FusedLocationRepository (Play Services)
+    │       ├── logging/            AndroidErrorLogger (adapter over android.util.Log)
     │       └── store/              DataStore office and check-in repositories
     ├── test/                       JUnit, Turbine and Robolectric Compose tests, with fakes
     └── androidTest/                Hilt end-to-end flow test on an emulator
@@ -92,6 +94,12 @@ Patterns, used where they earn their place:
   `SetOfficeLocationUseCase`, `MarkAttendanceUseCase`.
 - **Observer**: Kotlin `Flow`/`StateFlow` end to end.
 - **Constructor injection** with Hilt. `java.time.Clock` is injected, so time rules are deterministic in tests.
+
+Rules vs policy: `AttendanceRules` holds the fixed business constants (50 m, 30 m, 09:00-10:30).
+`AttendancePolicy` holds the switchable part (`blockMockLocations`, off by default so reviewers can test with a
+fake-GPS app) and `fixProblem(fix)`, the single check for mock and low-accuracy fixes. Both
+`SetOfficeLocationUseCase` and `EvaluateAttendanceUseCase` call it, so the rule lives in one place.
+The window end is inclusive: exactly 10:30:00 is open, anything later is closed.
 
 How the rules work:
 - **Set Office Location** takes a fresh GPS fix (accuracy must be 30 m or better) and saves it with DataStore.

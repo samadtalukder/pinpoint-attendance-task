@@ -11,7 +11,9 @@ import com.intelmachin.attendance.data.location.FusedLocationRepository
 import com.intelmachin.attendance.data.location.PlayServicesGpsSettingsChecker
 import com.intelmachin.attendance.data.store.DataStoreCheckInRepository
 import com.intelmachin.attendance.data.store.DataStoreOfficeRepository
+import com.intelmachin.attendance.data.logging.AndroidErrorLogger
 import com.intelmachin.attendance.domain.AttendancePolicy
+import com.intelmachin.attendance.domain.ErrorLogger
 import com.intelmachin.attendance.domain.repository.CheckInRepository
 import com.intelmachin.attendance.domain.repository.GpsSettingsChecker
 import com.intelmachin.attendance.domain.repository.LocationRepository
@@ -71,4 +73,10 @@ object PolicyModule {
 object ClockModule {
     @Provides
     fun clock(): Clock = Clock.systemDefaultZone()
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class LoggingModule {
+    @Binds abstract fun errorLogger(impl: AndroidErrorLogger): ErrorLogger
 }
