@@ -12,8 +12,16 @@ enum class LocationAvailability {
 }
 
 /** One-off feedback shown once, then cleared with [AttendanceViewModel.onMessageShown]. */
-enum class AttendanceMessage {
-    OfficeSaved, OfficeNoFix, OfficeMockLocation, OfficeLowAccuracy, CheckedIn, CheckInRejected, ActionFailed
+sealed interface AttendanceMessage {
+    data object OfficeSaved : AttendanceMessage
+    data object OfficeNoFix : AttendanceMessage
+    data object OfficeMockLocation : AttendanceMessage
+    data object OfficeLowAccuracy : AttendanceMessage
+    data object CheckedIn : AttendanceMessage
+
+    /** The tap-time re-check failed; [reason] says which rule, so the user knows what to fix. */
+    data class CheckInRejected(val reason: Eligibility) : AttendanceMessage
+    data object ActionFailed : AttendanceMessage
 }
 
 data class AttendanceUiState(

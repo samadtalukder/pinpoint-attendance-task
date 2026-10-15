@@ -226,7 +226,19 @@ class AttendanceViewModelTest {
         location.emit(LocationStatus.Available(fix(OFFICE)))
         location.fixResult = fix(northOf(OFFICE, 300.0))
         vm.onMarkAttendance()
-        assertEquals(AttendanceMessage.CheckInRejected, s().message)
+        assertEquals(AttendanceMessage.CheckInRejected(Eligibility.OutOfRange), s().message)
+        assertNull(checkIns.lastCheckIn.first())
+    }
+
+    @Test
+    fun `mark attendance rejection names low accuracy at tap time`() = runTest {
+        office.save(OFFICE)
+        val vm = viewModel()
+        val s = state(vm)
+        location.emit(LocationStatus.Available(fix(OFFICE)))
+        location.fixResult = fix(OFFICE, accuracy = 80f)
+        vm.onMarkAttendance()
+        assertEquals(AttendanceMessage.CheckInRejected(Eligibility.LowAccuracy(80f)), s().message)
         assertNull(checkIns.lastCheckIn.first())
     }
 

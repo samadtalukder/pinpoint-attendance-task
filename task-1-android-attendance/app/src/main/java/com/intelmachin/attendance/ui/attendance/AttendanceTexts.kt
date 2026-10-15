@@ -52,16 +52,14 @@ fun Eligibility.reasonText(): String = when (this) {
 }
 
 @Composable
-fun AttendanceMessage.text(): String = stringResource(
-    when (this) {
-        AttendanceMessage.OfficeSaved -> R.string.message_office_saved
-        AttendanceMessage.OfficeNoFix -> R.string.message_office_no_fix
-        AttendanceMessage.OfficeMockLocation -> R.string.message_office_mock
-        AttendanceMessage.OfficeLowAccuracy -> R.string.message_office_low_accuracy
-        AttendanceMessage.CheckedIn -> R.string.message_checked_in
-        AttendanceMessage.CheckInRejected -> R.string.message_check_in_rejected
-        AttendanceMessage.ActionFailed -> R.string.message_action_failed
-    },
-)
+fun AttendanceMessage.text(): String = when (this) {
+    AttendanceMessage.OfficeSaved -> stringResource(R.string.message_office_saved)
+    AttendanceMessage.OfficeNoFix -> stringResource(R.string.message_office_no_fix)
+    AttendanceMessage.OfficeMockLocation -> stringResource(R.string.message_office_mock)
+    AttendanceMessage.OfficeLowAccuracy -> stringResource(R.string.message_office_low_accuracy)
+    AttendanceMessage.CheckedIn -> stringResource(R.string.message_checked_in)
+    is AttendanceMessage.CheckInRejected -> reason.reasonText()
+    AttendanceMessage.ActionFailed -> stringResource(R.string.message_action_failed)
+}
 
 private const val METERS_PER_KM = 1_000.0

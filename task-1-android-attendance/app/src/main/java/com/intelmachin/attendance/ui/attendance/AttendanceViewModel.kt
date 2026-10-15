@@ -129,9 +129,9 @@ class AttendanceViewModel @Inject constructor(
         isBusy = local.value.isMarking,
         setBusy = { copy(isMarking = it) },
     ) {
-        when (markAttendance()) {
+        when (val result = markAttendance()) {
             is MarkAttendanceResult.Marked -> AttendanceMessage.CheckedIn
-            is MarkAttendanceResult.Rejected -> AttendanceMessage.CheckInRejected
+            is MarkAttendanceResult.Rejected -> AttendanceMessage.CheckInRejected(result.reason)
         }
     }
 
