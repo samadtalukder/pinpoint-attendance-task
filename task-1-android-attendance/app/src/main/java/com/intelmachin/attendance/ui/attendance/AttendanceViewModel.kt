@@ -1,5 +1,6 @@
 package com.intelmachin.attendance.ui.attendance
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.intelmachin.attendance.domain.model.LocationStatus
@@ -65,16 +66,16 @@ class AttendanceViewModel @Inject constructor(
 
     val uiState: StateFlow<AttendanceUiState> = combine(
         location.status, office.office, checkIns.lastCheckIn, local, clockTick,
-    ) { status, officePoint, lastCheckIn, local, _ ->
+    ) { status, officePoint, lastCheckIn, localState, _ ->
         val fix = (status as? LocationStatus.Available)?.fix
         val check = evaluate(fix, officePoint, lastCheckIn)
         AttendanceUiState(
             availability = when (status) {
                 LocationStatus.PermissionDenied ->
-                    if (local.permissionPermanentlyDenied) LocationAvailability.PermissionPermanentlyDenied
+                    if (localState.permissionPermanentlyDenied) LocationAvailability.PermissionPermanentlyDenied
                     else LocationAvailability.PermissionDenied
                 LocationStatus.ApproximateOnly ->
-                    if (local.permissionPermanentlyDenied) LocationAvailability.PermissionPermanentlyDenied
+                    if (localState.permissionPermanentlyDenied) LocationAvailability.PermissionPermanentlyDenied
                     else LocationAvailability.PreciseLocationNeeded
                 LocationStatus.GpsOff -> LocationAvailability.GpsOff
                 LocationStatus.Searching -> LocationAvailability.Searching
@@ -87,9 +88,9 @@ class AttendanceViewModel @Inject constructor(
             eligibility = check.eligibility,
             isWindowOpen = check.isWindowOpen,
             checkIn = lastCheckIn,
-            isSettingOffice = local.isSettingOffice,
-            isMarking = local.isMarking,
-            message = local.message,
+            isSettingOffice = localState.isSettingOffice,
+            isMarking = localState.isMarking,
+            message = localState.message,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), AttendanceUiState())
 
@@ -151,6 +152,7 @@ class AttendanceViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Log.e(TAG, "Attendance action failed", e)
                 AttendanceMessage.ActionFailed
             }
             local.update { it.setBusy(false).copy(message = message) }
@@ -160,6 +162,7 @@ class AttendanceViewModel @Inject constructor(
     fun onMessageShown() = local.update { it.copy(message = null) }
 
     private companion object {
+        const val TAG = "AttendanceViewModel"
         const val CLOCK_TICK_MS = 5_000L
         const val STOP_TIMEOUT_MS = 5_000L
     }
