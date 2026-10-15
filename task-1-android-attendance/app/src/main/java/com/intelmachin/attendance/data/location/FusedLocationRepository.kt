@@ -13,9 +13,9 @@ import android.os.Build
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.intelmachin.attendance.domain.model.GeoPoint
@@ -60,7 +60,10 @@ class FusedLocationRepository @Inject constructor(
             locationEnabled().flatMapLatest { enabled ->
                 if (enabled) fixes().map<LocationFix, LocationStatus> { LocationStatus.Available(it) }
                     .onStart { emit(LocationStatus.Searching) }
-                    .catch { if (it is SecurityException) emit(LocationStatus.PermissionDenied) else throw it }
+                    .catch {
+                        // Play Services failures must not crash the collector; keep showing "searching".
+                        emit(if (it is SecurityException) LocationStatus.PermissionDenied else LocationStatus.Searching)
+                    }
                 else flowOf(LocationStatus.GpsOff)
             }
         }
@@ -73,6 +76,7 @@ class FusedLocationRepository @Inject constructor(
     @SuppressLint("MissingPermission")
     override suspend fun currentFix(): LocationFix? {
         if (currentPermission() != Permission.Precise) return null
+        if (!LocationManagerCompat.isLocationEnabled(locationManager)) return null
         val cancellation = CancellationTokenSource()
         return try {
             withTimeoutOrNull(FIX_TIMEOUT_MS) {
@@ -119,12 +123,13 @@ class FusedLocationRepository @Inject constructor(
             }
         }
         client.requestLocationUpdates(highAccuracyRequest(), callback, Looper.getMainLooper())
+            .addOnFailureListener { close(it) }
         awaitClose { client.removeLocationUpdates(callback) }
     }
 
     private fun Location.toFix() = LocationFix(
         point = GeoPoint(latitude, longitude),
-        accuracyMeters = accuracy,
+        accuracyMeters = if (hasAccuracy()) accuracy else Float.MAX_VALUE,
         timeMillis = time,
         isMock = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) isMock else @Suppress("DEPRECATION") isFromMockProvider,
     )
