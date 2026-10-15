@@ -2,6 +2,7 @@ package com.intelmachin.attendance.domain.usecase
 
 import com.intelmachin.attendance.domain.AttendancePolicy
 import com.intelmachin.attendance.domain.AttendanceRules
+import com.intelmachin.attendance.domain.FixProblem
 import com.intelmachin.attendance.domain.model.CheckIn
 import com.intelmachin.attendance.domain.model.GeoPoint
 import com.intelmachin.attendance.domain.model.LocationFix
@@ -54,16 +55,19 @@ class EvaluateAttendanceUseCase @Inject constructor(
         stale: Boolean,
         windowOpen: Boolean,
         lastCheckIn: CheckIn?,
-    ): Eligibility = when {
-        lastCheckIn != null && isToday(lastCheckIn) -> Eligibility.AlreadyCheckedIn(lastCheckIn)
-        office == null -> Eligibility.NoOffice
-        fix == null || meters == null -> Eligibility.NoFix
-        stale -> Eligibility.StaleFix
-        fix.isMock && policy.blockMockLocations -> Eligibility.MockLocation
-        fix.accuracyMeters > AttendanceRules.MAX_ACCURACY_METERS -> Eligibility.LowAccuracy(fix.accuracyMeters)
-        meters > AttendanceRules.OFFICE_RADIUS_METERS -> Eligibility.OutOfRange
-        !windowOpen -> Eligibility.OutsideWindow
-        else -> Eligibility.Eligible
+    ): Eligibility {
+        if (lastCheckIn != null && isToday(lastCheckIn)) return Eligibility.AlreadyCheckedIn(lastCheckIn)
+        if (office == null) return Eligibility.NoOffice
+        if (fix == null || meters == null) return Eligibility.NoFix
+        if (stale) return Eligibility.StaleFix
+        when (val problem = policy.fixProblem(fix)) {
+            FixProblem.MockLocation -> return Eligibility.MockLocation
+            is FixProblem.LowAccuracy -> return Eligibility.LowAccuracy(problem.accuracyMeters)
+            null -> Unit
+        }
+        if (meters > AttendanceRules.OFFICE_RADIUS_METERS) return Eligibility.OutOfRange
+        if (!windowOpen) return Eligibility.OutsideWindow
+        return Eligibility.Eligible
     }
 
     private fun isToday(checkIn: CheckIn): Boolean {

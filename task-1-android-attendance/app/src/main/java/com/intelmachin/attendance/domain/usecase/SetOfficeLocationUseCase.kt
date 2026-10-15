@@ -1,7 +1,7 @@
 package com.intelmachin.attendance.domain.usecase
 
 import com.intelmachin.attendance.domain.AttendancePolicy
-import com.intelmachin.attendance.domain.AttendanceRules
+import com.intelmachin.attendance.domain.FixProblem
 import com.intelmachin.attendance.domain.model.GeoPoint
 import com.intelmachin.attendance.domain.repository.LocationRepository
 import com.intelmachin.attendance.domain.repository.OfficeRepository
@@ -21,11 +21,10 @@ class SetOfficeLocationUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(): SetOfficeResult {
         val fix = location.currentFix() ?: return SetOfficeResult.NoFix
-        return when {
-            fix.isMock && policy.blockMockLocations -> SetOfficeResult.MockLocation
-            fix.accuracyMeters > AttendanceRules.MAX_ACCURACY_METERS ->
-                SetOfficeResult.LowAccuracy(fix.accuracyMeters)
-            else -> {
+        return when (val problem = policy.fixProblem(fix)) {
+            FixProblem.MockLocation -> SetOfficeResult.MockLocation
+            is FixProblem.LowAccuracy -> SetOfficeResult.LowAccuracy(problem.accuracyMeters)
+            null -> {
                 office.save(fix.point)
                 SetOfficeResult.Saved(fix.point)
             }
