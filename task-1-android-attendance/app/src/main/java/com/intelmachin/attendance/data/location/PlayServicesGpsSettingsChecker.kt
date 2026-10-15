@@ -4,6 +4,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.SettingsClient
+import com.intelmachin.attendance.domain.repository.GpsResolution
 import com.intelmachin.attendance.domain.repository.GpsSettingsChecker
 import com.intelmachin.attendance.domain.repository.GpsSettingsResult
 import kotlinx.coroutines.tasks.await
@@ -23,7 +24,7 @@ class PlayServicesGpsSettingsChecker @Inject constructor(
             client.checkLocationSettings(request).await()
             GpsSettingsResult.AlreadyOn
         } catch (e: ResolvableApiException) {
-            GpsSettingsResult.NeedsResolution(e.resolution)
+            GpsSettingsResult.NeedsResolution(GpsResolution(e.resolution))
         } catch (_: ApiException) {
             GpsSettingsResult.Unavailable
         }

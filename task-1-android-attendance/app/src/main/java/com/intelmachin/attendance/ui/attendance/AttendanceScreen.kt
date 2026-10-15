@@ -2,6 +2,7 @@ package com.intelmachin.attendance.ui.attendance
 
 import android.Manifest
 import android.app.Activity
+import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.ContextWrapper
@@ -89,8 +90,14 @@ fun AttendanceScreen(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is AttendanceEvent.ResolveGps ->
-                    gpsLauncher.launch(IntentSenderRequest.Builder(event.resolution).build())
+                is AttendanceEvent.ResolveGps -> {
+                    val dialog = event.resolution.handle as? PendingIntent
+                    if (dialog != null) {
+                        gpsLauncher.launch(IntentSenderRequest.Builder(dialog).build())
+                    } else {
+                        openSettings(locationSettingsIntent())
+                    }
+                }
 
                 AttendanceEvent.OpenLocationSettings -> openSettings(locationSettingsIntent())
             }
